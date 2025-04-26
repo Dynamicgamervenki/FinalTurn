@@ -1,0 +1,27 @@
+# Unreal Engine standard ignores
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vscode/
+*.sln
+*.suo
+*.user
+*.userprefs
+*.opensdf
+*.sdf
+*.cache
+*.log
+*.pdb
+*.db
+
+# JetBrains Rider IDE project files
+.idea/
+*.iml
+
+# Ignore Mixamo folder inside Content
+Content/Mixamo/
+
+# System files
+.DS_Store
+Thumbs.db
