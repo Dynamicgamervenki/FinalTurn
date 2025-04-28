@@ -21,6 +21,8 @@ Saved/
 
 # Ignore Mixamo folder inside Content
 Content/Mixamo/
+Content/MegaMagicVFXBundle/
+Content/Fab
 
 # System files
 .DS_Store
