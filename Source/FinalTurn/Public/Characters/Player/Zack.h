@@ -123,9 +123,14 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* EquipStoneMontage;
 
+    UFUNCTION(BlueprintCallable)
+    bool CanClickOnNode(const FVector &Dest);
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);
     UFUNCTION()
     virtual void OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+    UFUNCTION()
+    void PlayAnimMontageInReverse(UAnimMontage* MontageToPlay);
+
 };

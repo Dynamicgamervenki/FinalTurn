@@ -110,6 +110,15 @@ void AZack::EquipWeapon()
 {
 	if (PickupItem != nullptr && EquipState != EEquipState::Gun)
 	{
+		if (EquipState == EEquipState::Stone)
+		{
+			PlayAnimMontageInReverse(EquipStoneMontage);
+			if (EquippedItem != nullptr)
+			{
+				EquippedItem->Destroy();
+			}
+		}
+		PickupItem->SetActorHiddenInGame(false);
 		PlayAnimMontages(DrawGunMontage);
 		EquipState = EEquipState::Gun;
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
@@ -118,6 +127,8 @@ void AZack::EquipWeapon()
 	else
 	{
 		EquipState = EEquipState::None;
+		PlayAnimMontageInReverse(DrawGunMontage);
+		PickupItem->SetActorHiddenInGame(true);
 	}
 }
 
@@ -126,6 +137,11 @@ void AZack::EquipStone()
 {
 	if (StoneCount > 0 && EquipState != EEquipState::Stone)
 	{
+		if (EquipState == EEquipState::Gun)
+		{
+		   PlayAnimMontageInReverse(DrawGunMontage);
+			PickupItem->SetActorHiddenInGame(true);
+		}
 		FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
 		FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
 		AStone* Stone = GetWorld()->SpawnActor<AStone>(StoneClass,SocketLocation,SocketRotation);
@@ -142,9 +158,7 @@ void AZack::EquipStone()
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (EquippedItem != nullptr && AnimInstance != nullptr)
 		{
-			AnimInstance->Montage_Play(EquipStoneMontage, -1.f);
-			float MontageLength = EquipStoneMontage->GetPlayLength();
-			AnimInstance->Montage_SetPosition(EquipStoneMontage, MontageLength);
+			PlayAnimMontageInReverse(EquipStoneMontage);
 			AnimInstance->OnMontageEnded.AddDynamic(this,&AZack::OnAnimMontageEnded);
 			//EquippedItem->Destroy();
 		}
@@ -173,12 +187,16 @@ void AZack::DoMoveTo(const FVector& Dest)
 
 void AZack::DoThrowStoneAt(const FVector& Dest)
 {
-	if (StoneCount > 0 && EquipState == EEquipState::Stone)
+	if (StoneCount > 0 && EquipState == EEquipState::Stone && CanClickOnNode(Dest))
 	{
 		CanClickNode = false;
 		FRotator lookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),Dest);
 		SetActorRotation(lookRotator);
 		PlayAnimMontages(ThrowMontage);
+	}
+	else if (!CanClickOnNode(Dest))
+	{
+		GEngine->AddOnScreenDebugMessage(16,2,FColor::Red,"TRYING TO THROW AT DISTANCE > 500");
 	}
 	else
 	{
@@ -274,6 +292,9 @@ void AZack::PrintOutData()
 			FString::Printf(TEXT("EquipState (int): %d"), static_cast<int32>(EquipState))
 		);
 
+		GEngine->AddOnScreenDebugMessage(11, 2.0f, FColor::Green, TEXT("Press E to Equip Gun"));
+		GEngine->AddOnScreenDebugMessage(12, 2.0f, FColor::Green, TEXT("Press F to Equip Stone"));
+
 	}
 }
 
@@ -312,4 +333,22 @@ void AZack::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 			}
 
 		}
+}
+
+void AZack::PlayAnimMontageInReverse(UAnimMontage* MontageToPlay)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && MontageToPlay)
+	{
+		AnimInstance->Montage_Play(MontageToPlay, -1.f);
+		float MontageLength = MontageToPlay->GetPlayLength();
+		AnimInstance->Montage_SetPosition(MontageToPlay, MontageLength);
+	}
+}
+
+bool AZack::CanClickOnNode(const FVector& Dest)
+{
+	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
+	return (distance <= moveDistance && distance > 100.0f);
+
 }
