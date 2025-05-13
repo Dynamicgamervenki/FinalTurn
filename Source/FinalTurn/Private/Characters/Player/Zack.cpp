@@ -12,11 +12,10 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Pickups/Stone.h"
 #include "Pickups/ThrowableStone.h"
-#include "Pickups/Weapon.h"
-
 AZack::AZack()
 {
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	moveDistance = 500.0f;
 }
 
 
@@ -99,7 +98,7 @@ void AZack::OnInteract()
 		 			break;
 
 		 		case EEquipState::Gun:
-		 			// maybe you shoot at the node? or treat nodes as invalid?
+		 			DoShootAt(MoveLocation);
 		 				break;
 		 		}
 		 	}
@@ -109,10 +108,16 @@ void AZack::OnInteract()
 
 void AZack::EquipWeapon()
 {
-	AWeapon* Pickup = Cast<AWeapon>(PickupItem);
-	if (Pickup)
+	if (PickupItem != nullptr && EquipState != EEquipState::Gun)
 	{
-		Pickup->Equip(GetMesh(),FName("Stone_Socket"));
+		PlayAnimMontages(DrawGunMontage);
+		EquipState = EEquipState::Gun;
+		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
+		PickupItem->AttachToComponent(GetMesh(), TransformRules,"GunE_Socket");
+	}
+	else
+	{
+		EquipState = EEquipState::None;
 	}
 }
 
@@ -124,7 +129,9 @@ void AZack::EquipStone()
 		FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
 		FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
 		AStone* Stone = GetWorld()->SpawnActor<AStone>(StoneClass,SocketLocation,SocketRotation);
+		SetEquippedItem(Stone);
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
+		PlayAnimMontages(EquipStoneMontage);
 		Stone->AttachToComponent(GetMesh(), TransformRules,"Stone_Socket");
 		EquipState = EEquipState::Stone;
 	}
@@ -132,6 +139,15 @@ void AZack::EquipStone()
 	{
 		GEngine->AddOnScreenDebugMessage(12,2,FColor::Green,"UnEquipped Stone");
 		EquipState = EEquipState::None;
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (EquippedItem != nullptr && AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(EquipStoneMontage, -1.f);
+			float MontageLength = EquipStoneMontage->GetPlayLength();
+			AnimInstance->Montage_SetPosition(EquipStoneMontage, MontageLength);
+			AnimInstance->OnMontageEnded.AddDynamic(this,&AZack::OnAnimMontageEnded);
+			//EquippedItem->Destroy();
+		}
 	}
 }
 
@@ -142,9 +158,17 @@ void AZack::EquipGranade()
 
 void AZack::DoMoveTo(const FVector& Dest)
 {
-	UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
-	IsMoving = true;
-	CanClickNode = false;
+	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
+	if (distance <= moveDistance && distance > 100.0f) 
+	{
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
+		IsMoving = true;
+		CanClickNode = false;
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(16,2,FColor::Red,"Distance > 200 units");
+	}
 }
 
 void AZack::DoThrowStoneAt(const FVector& Dest)
@@ -154,19 +178,17 @@ void AZack::DoThrowStoneAt(const FVector& Dest)
 		CanClickNode = false;
 		FRotator lookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),Dest);
 		SetActorRotation(lookRotator);
-
-		 UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && ThrowMontage)
-		{
-			AnimInstance->Montage_Play(ThrowMontage);
-		}
-		
+		PlayAnimMontages(ThrowMontage);
 	}
 	else
 	{
 		GEngine->AddOnScreenDebugMessage(16,3,FColor::Green,"Stone count 0 , switching state");
 		EquipState = EEquipState::None;
 		DoMoveTo(Dest);
+		if (EquippedItem != nullptr)
+		{
+			EquippedItem->Destroy();
+		}
 	}
 }
 
@@ -201,6 +223,18 @@ void AZack::DoThrowGrenadeAt(const FVector& Dest)
 {
 	GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,"Throwing Grenade");
 }
+
+
+// void AZack::DoShootAt(const FVector& Dest)
+// {
+// 	GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,"Shooting");
+// 	FRotator lookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),Dest);
+// 	SetActorRotation(lookRotator);
+//
+// 	FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
+// 	FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
+// 	
+// }
 
 
 void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
@@ -241,4 +275,41 @@ void AZack::PrintOutData()
 		);
 
 	}
+}
+
+void AZack::PlayAnimMontages(UAnimMontage* MontageToPlay)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && MontageToPlay)
+	{
+		AnimInstance->Montage_Play(MontageToPlay);
+	}
+	else
+	{
+		const FString Msg = FString::Printf(
+		TEXT("%s: MontageToPlay is null! Did you assign it in the editor?"),
+		*GetName()
+	);
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				/*Key=*/ -1, /*Time=*/ 5.f, /*Color=*/ FColor::Orange,
+				Msg
+			);
+		}
+	}
+}
+
+void AZack::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+		if (Montage == EquipStoneMontage && EquippedItem)
+		{
+			EquippedItem->Destroy();
+			if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+			{
+				AnimInstance->OnMontageEnded.RemoveDynamic(this, &AZack::OnAnimMontageEnded);
+			}
+
+		}
 }

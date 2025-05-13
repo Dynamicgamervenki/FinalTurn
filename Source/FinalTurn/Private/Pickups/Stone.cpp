@@ -28,7 +28,7 @@ void AStone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* O
 	if (OtherActor->Implements<UPickupInterface	>())
 	{
 		IPickupInterface* Pickup = Cast<IPickupInterface>(OtherActor);
-		if (Pickup)
+		if (Pickup && OtherActor)
 		{
 			Pickup->OnPickedUp(EPickupType::Stone,StoneCount);
 			Pickup->AddToPickupArray(this);

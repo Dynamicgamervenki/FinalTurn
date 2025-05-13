@@ -31,10 +31,11 @@ protected:
 	UFUNCTION()
 	virtual  void OnBoxEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-
 	virtual FVector InteractPosition() override;
 
-
-private:
+	UPROPERTY(EditAnywhere)
+	bool bIsEndNode;
+	
 	
 };
+  

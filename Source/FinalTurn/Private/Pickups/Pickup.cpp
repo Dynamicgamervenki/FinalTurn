@@ -4,9 +4,6 @@
 #include "Pickups/Pickup.h"
 #include "Components/SphereComponent.h"
 #include "Characters/Player/Zack.h"
-#include "Pickups/Pickup.h"
-
-#include "Characters/Player/ZackPlayerController.h"
 
 APickup::APickup()
 {
@@ -37,6 +34,8 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	if (Zack)
 	{
 		Zack->SetPickupItem(this);
+		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
+		ItemMesh->AttachToComponent(Zack->GetMesh(), TransformRules,"Socket_Gun");
 	}
 }
 
