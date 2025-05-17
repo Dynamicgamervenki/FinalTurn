@@ -32,10 +32,10 @@ protected:
 	virtual  void OnBoxEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	virtual FVector InteractPosition() override;
-
+	virtual TArray<AActor*> GetOverlappingActorsOnNode() override;
+	
 	UPROPERTY(EditAnywhere)
 	bool bIsEndNode;
-	
 	
 };
   

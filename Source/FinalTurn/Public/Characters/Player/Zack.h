@@ -133,4 +133,6 @@ private:
     UFUNCTION()
     void PlayAnimMontageInReverse(UAnimMontage* MontageToPlay);
 
+    TArray<AActor*> OverlappingActorsOnNode;
+
 };

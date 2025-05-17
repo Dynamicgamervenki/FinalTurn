@@ -75,14 +75,16 @@ void AZack::OnInteract()
 	FHitResult Hit;
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
 	PlayerController->GetHitResultUnderCursorForObjects(ObjectTypes,true,Hit);
+	//GEngine->AddOnScreenDebugMessage(123,3.0f,FColor::Magenta,Hit.GetActor()->GetName());
 	if (Hit.bBlockingHit && CanClickNode)
 	{
-		 if( Hit.GetActor()->Implements<UInteractInterface>())
+		//bool bHitIsCharacter = Hit.GetActor() && Hit.GetActor()->IsA(ACharacter::StaticClass());
+		 if( Hit.GetActor()->Implements<UInteractInterface>() /*|| bHitIsCharacter*/ )
 		 {
-		 	
 		 	if (IInteractInterface* Interact = Cast<IInteractInterface>(Hit.GetActor()))
 		 	{
 		 		FVector MoveLocation  = Interact->InteractPosition();
+		 		OverlappingActorsOnNode = Interact->GetOverlappingActorsOnNode();
 		 		switch (EquipState)
 		 		{
 		 		case EEquipState::None:
@@ -128,6 +130,7 @@ void AZack::EquipWeapon()
 	{
 		EquipState = EEquipState::None;
 		PlayAnimMontageInReverse(DrawGunMontage);
+		if (PickupItem)
 		PickupItem->SetActorHiddenInGame(true);
 	}
 }
@@ -172,8 +175,19 @@ void AZack::EquipGranade()
 
 void AZack::DoMoveTo(const FVector& Dest)
 {
+	 bool bHasOverlapCharacter;
+	if (!OverlappingActorsOnNode.IsEmpty())
+	{
+		bHasOverlapCharacter = OverlappingActorsOnNode.ContainsByPredicate(
+		[](AActor* Actor)
+		{
+			GEngine->AddOnScreenDebugMessage(1,2,FColor::Green,Actor->GetName());
+			return Actor && Actor->IsA(ACharacter::StaticClass());
+		});
+	}
+	
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f) 
+	if (distance <= moveDistance && distance > 100.0f && !bHasOverlapCharacter) 
 	{
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
 		IsMoving = true;

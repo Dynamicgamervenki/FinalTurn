@@ -58,3 +58,9 @@ FVector ANode::InteractPosition()
 	return Box->GetComponentLocation();
 }
 
+TArray<AActor*> ANode::GetOverlappingActorsOnNode()
+{
+	TArray<AActor*> OverlappingActors;
+	Box->GetOverlappingActors(OverlappingActors);
+	return OverlappingActors;
+}

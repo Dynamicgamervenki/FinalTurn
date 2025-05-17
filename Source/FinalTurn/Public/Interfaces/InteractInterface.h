@@ -24,4 +24,5 @@ class FINALTURN_API IInteractInterface
 public:
 	//virtual void Interact() = 0;
 	virtual FVector InteractPosition() = 0;
+	virtual TArray<AActor*> GetOverlappingActorsOnNode() = 0;
 };
