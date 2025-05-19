@@ -128,10 +128,10 @@ void AZack::EquipWeapon()
 	}
 	else
 	{
-		EquipState = EEquipState::None;
-		PlayAnimMontageInReverse(DrawGunMontage);
-		if (PickupItem)
-		PickupItem->SetActorHiddenInGame(true);
+		// EquipState = EEquipState::None;
+		// PlayAnimMontageInReverse(DrawGunMontage);
+		// if (PickupItem)
+		// PickupItem->SetActorHiddenInGame(true);
 	}
 }
 
@@ -156,15 +156,14 @@ void AZack::EquipStone()
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(12,2,FColor::Green,"UnEquipped Stone");
-		EquipState = EEquipState::None;
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (EquippedItem != nullptr && AnimInstance != nullptr)
-		{
-			PlayAnimMontageInReverse(EquipStoneMontage);
-			AnimInstance->OnMontageEnded.AddDynamic(this,&AZack::OnAnimMontageEnded);
-			//EquippedItem->Destroy();
-		}
+		// GEngine->AddOnScreenDebugMessage(12,2,FColor::Green,"UnEquipped Stone");
+		// EquipState = EEquipState::None;
+		// UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		// if (EquippedItem != nullptr && AnimInstance != nullptr)
+		// {
+		// 	PlayAnimMontageInReverse(EquipStoneMontage);
+		// 	AnimInstance->OnMontageEnded.AddDynamic(this,&AZack::OnAnimMontageEnded);();
+		// }
 	}
 }
 
@@ -187,8 +186,9 @@ void AZack::DoMoveTo(const FVector& Dest)
 	}
 	
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f && !bHasOverlapCharacter) 
+	if (distance <= moveDistance && distance > 100.0f /*&& !bHasOverlapCharacter*/) 
 	{
+		FVector AdjustedDest = Dest + FVector(50.0f, 0.0f, 0.0f);
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
 		IsMoving = true;
 		CanClickNode = false;
@@ -235,6 +235,10 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 
 		if (ThrowableStoneClass && GetWorld())
 		{
+			if (EquippedItem != nullptr)
+			{
+				EquippedItem->Destroy();
+			}
 			AThrowableStone* SpawnedStone = GetWorld()->SpawnActor<AThrowableStone>(ThrowableStoneClass, SocketLocation, SocketRotation);
 			FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
 			FVector ScaledForward = ForwardVector * 600.0f;
@@ -247,6 +251,11 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 			SpawnedStone->SM_Stone->AddImpulse(FinalImpulse);
 			StoneCount--;
 			CanClickNode = true;
+			EquipState = EEquipState::None;
+		}
+		else if (NotifyName == "canWalk")
+		{
+			//soon
 		}
 	}
 }
