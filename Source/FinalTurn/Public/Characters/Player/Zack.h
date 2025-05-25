@@ -140,6 +140,9 @@ private:
     UFUNCTION()
     void PlayAnimMontageInReverse(UAnimMontage* MontageToPlay);
 
+    UPROPERTY(VisibleAnywhere)
     TArray<AActor*> OverlappingActorsOnNode;
+    UPROPERTY(VisibleAnywhere)
+    FVector TargetEnemyLocation = FVector::ZeroVector;
 
 };

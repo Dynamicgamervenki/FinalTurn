@@ -7,10 +7,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Breakable/BreakableActor.h"
-#include "Characters/Enemies/Enemy.h"
+#include "Characters/Enemies/EnemyBase.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "Interfaces/InteractInterface.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Pickups/Stone.h"
@@ -69,6 +68,19 @@ void AZack::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	PrintOutData();
+	
+	if (TargetEnemyLocation != FVector::ZeroVector)
+	{
+		double Distance = FVector::Dist(GetActorLocation(),TargetEnemyLocation);
+		GEngine->AddOnScreenDebugMessage(126, 4.0f, FColor::Black, FString::Printf(TEXT("Distance: %f"), Distance));
+		if (Distance < 100.0f)
+		{
+			CanClickNode = false;
+			GEngine->AddOnScreenDebugMessage(143,2.0f,FColor::Green,"need to play stealthAnim");
+			PlayAnimMontages(StealthMontage);
+			TargetEnemyLocation = FVector::ZeroVector;
+		}
+	}
 }
 
 void AZack::OnInteract()
@@ -78,14 +90,13 @@ void AZack::OnInteract()
 	PlayerController->GetHitResultUnderCursorForObjects(ObjectTypes,true,Hit);
 	if (Hit.bBlockingHit && CanClickNode)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Hit Actor: %s"), Hit.GetActor() ? *Hit.GetActor()->GetName() : TEXT("None")));
-		//GEngine->AddOnScreenDebugMessage(121, 2.0f, FColor::Orange, FString::Printf(TEXT("Hit Actor: %s"), *Hit.GetActor()->GetName()));
-		ACharacter* HitCharacter = Cast<ACharacter>(Hit.GetActor());
-		if (HitCharacter && HitCharacter != this)
+		if (AEnemyBase* Enemy = Cast<AEnemyBase>(Hit.GetActor()))
 		{
-			//GEngine->AddOnScreenDebugMessage(121, 2.0f, FColor::Orange, FString::Printf(TEXT("Hit Character: %s"), HitCharacter->GetName()));
-			AttackEnemy(HitCharacter);
+			GEngine->AddOnScreenDebugMessage(345,2.0f,FColor::Green,"ClickedOnCharacter");
+			OverlappingActorsOnNode.Add(Enemy);
+			 AttackEnemy(Enemy);
 		}
+		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Hit Actor: %s"), Hit.GetActor() ? *Hit.GetActor()->GetName() : TEXT("None")));
 		else if( Hit.GetActor()->Implements<UInteractInterface>())
 		{
 		 	if (IInteractInterface* Interact = Cast<IInteractInterface>(Hit.GetActor()))
@@ -96,13 +107,14 @@ void AZack::OnInteract()
 		 		{
 		 		case EEquipState::None:
 		 			if (ABreakableActor* breakableActor = Cast<ABreakableActor>(Hit.GetActor()))
+		 			{
 		 				GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Red,FString::Printf(TEXT("Clicking On BreakableActor without equping granade")));
+		 			}
 				    else
 				    {
 		 				DoMoveTo(MoveLocation);
 				    }
 		 			break;
-
 		 		case EEquipState::Stone:
 		 			DoThrowStoneAt(MoveLocation,Hit.GetActor());
 		 			break;
@@ -162,12 +174,15 @@ void AZack::EquipGranade()
 void AZack::DoMoveTo(const FVector& Dest)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f) 
+	if (distance <= moveDistance && distance > 100.0f && OverlappingActorsOnNode.IsEmpty()) 
 	{
-		//FVector AdjustedDest = Dest + FVector(50.0f, 0.0f, 0.0f);
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
 		IsMoving = true;
 		CanClickNode = false;
+	}
+	else if (!OverlappingActorsOnNode.IsEmpty())
+	{
+		AttackEnemy(OverlappingActorsOnNode[0]);
 	}
 	else
 	{
@@ -177,7 +192,6 @@ void AZack::DoMoveTo(const FVector& Dest)
 
 void AZack::DoThrowStoneAt(const FVector& Dest,AActor* HitActor)
 {
-	
 	if (StoneCount > 0 && EquipState == EEquipState::Stone && CanClickOnNode(Dest))
 	{
 		CanClickNode = false;
@@ -230,10 +244,6 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 			CanClickNode = true;
 			EquipState = EEquipState::None;
 		}
-		else if (NotifyName == "canWalk")
-		{
-			//soon
-		}
 	}
 }
 
@@ -251,7 +261,6 @@ void AZack::DoThrowGrenadeAt(const FVector& Dest)
  	SetActorRotation(LookRotator);
 	if (BulletCount > 0 && EquipState == EEquipState::Gun && CanClickOnNode(Dest))
 	{
-		CanClickNode = false;
  		GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,"Shooting");
 		FVector SocketLocation = GetMesh()->GetSocketLocation("socket_BulletSpawn");
 		AActor* Bullet = GetWorld()->SpawnActor<AActor>(BulletClass,SocketLocation,LookRotator);
@@ -316,21 +325,17 @@ void AZack::PlayAnimMontages(UAnimMontage* MontageToPlay)
 	if (AnimInstance && MontageToPlay)
 	{
 		AnimInstance->Montage_Play(MontageToPlay);
+		FOnMontageEnded EndDelegate;
+		EndDelegate.BindUObject(this, &AZack::OnAnimMontageEnded);
+
+		AnimInstance->Montage_Play(MontageToPlay);
+		AnimInstance->Montage_SetEndDelegate(EndDelegate, MontageToPlay);
 	}
 	else
 	{
 		const FString Msg = FString::Printf(
 		TEXT("%s: MontageToPlay is null! Did you assign it in the editor?"),
-		*GetName()
-	);
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				 -1, 5.f,FColor::Orange,
-				Msg
-			);
-		}
+		MontageToPlay);
 	}
 }
 
@@ -339,11 +344,15 @@ void AZack::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 		if (Montage == EquipStoneMontage && EquippedItem)
 		{
 			EquippedItem->Destroy();
-			if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		}
+		else if (Montage == StealthMontage)
+		{
+			GEngine->AddOnScreenDebugMessage(190, 2.0f, FColor::Yellow,"StealthAnimMontageEnded");
+			CanClickNode = true;
+			if (!OverlappingActorsOnNode.IsEmpty())
 			{
-				AnimInstance->OnMontageEnded.RemoveDynamic(this, &AZack::OnAnimMontageEnded);
+				OverlappingActorsOnNode[0]->Destroy();
 			}
-
 		}
 }
 
@@ -367,8 +376,8 @@ bool AZack::CanClickOnNode(const FVector& Dest)
 void AZack::AttackEnemy(AActor* actor)
 {
 	FVector Dest = actor->GetActorLocation();
+	TargetEnemyLocation = Dest;
 	UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
 	IsMoving = true;
 	CanClickNode = false;
-	PlayAnimMontages(StealthMontage);
 }

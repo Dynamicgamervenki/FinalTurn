@@ -23,6 +23,11 @@ protected:
 
 	virtual FVector InteractPosition() override;
 	virtual TArray<AActor*> GetOverlappingActorsOnNode() override;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Breakable")
+	int AmountToGetDestoryed = 1;
+	UPROPERTY(BlueprintReadWrite, Category="Breakable")
+	int ThrownCount;
 
 private:
 	UPROPERTY(VisibleAnywhere)

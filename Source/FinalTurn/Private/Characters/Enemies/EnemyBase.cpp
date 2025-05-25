@@ -21,15 +21,3 @@ void AEnemyBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-
-FVector AEnemyBase::InteractPosition()
-{
-	return GetActorLocation();
-}
-
-TArray<AActor*> AEnemyBase::GetOverlappingActorsOnNode()
-{
-	TArray<AActor*> OverlappingActors;
-	GetMesh()->GetOverlappingActors(OverlappingActors);
-	return OverlappingActors;
-}

@@ -8,7 +8,7 @@
 #include "EnemyBase.generated.h"
 
 UCLASS()
-class FINALTURN_API AEnemyBase : public ACharacter , public IInteractInterface
+class FINALTURN_API AEnemyBase : public ACharacter 
 {
 	GENERATED_BODY()
 
@@ -23,6 +23,4 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	virtual FVector InteractPosition() override;
-	virtual TArray<AActor*> GetOverlappingActorsOnNode() override;
 };
