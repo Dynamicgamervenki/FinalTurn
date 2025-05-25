@@ -20,7 +20,6 @@ Saved/
 *.iml
 
 # Ignore Mixamo folder inside Content
-Content/Mixamo/
 Content/MegaMagicVFXBundle/
 Content/Fab
 
