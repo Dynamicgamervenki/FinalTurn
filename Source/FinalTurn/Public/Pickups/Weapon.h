@@ -24,4 +24,7 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	int32 BulletCount;
+
 };

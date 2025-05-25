@@ -9,7 +9,7 @@
 
 ANode::ANode()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	SM_Node = CreateDefaultSubobject<UStaticMeshComponent>("StaticMesh");
 	SM_Node->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	SM_Node->SetCollisionObjectType(ECC_EngineTraceChannel1);
@@ -19,7 +19,6 @@ ANode::ANode()
 	Box->SetupAttachment(GetRootComponent());
 	Box->OnComponentBeginOverlap.AddDynamic(this,&ANode::OnBoxOverlap);
 	Box->OnComponentEndOverlap.AddDynamic(this,&ANode::OnBoxEndOverlap);
-
 }
 
 
@@ -30,11 +29,9 @@ void ANode::BeginPlay()
 
 }
 
-// Called every frame
 void ANode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,

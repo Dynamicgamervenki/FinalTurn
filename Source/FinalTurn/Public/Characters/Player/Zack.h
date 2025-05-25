@@ -46,14 +46,16 @@ public:
     
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Life")
     bool IsAlive = true;
-
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    bool IsGunAiming = false;
+    
     // --- Inline Setters for Pickup Items ---
     FORCEINLINE void SetPickupItem(APickup* Pickup)      { PickupItem = Pickup; }
     FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped; }
 
     // --- Blueprint Event for Shooting ---
-    UFUNCTION(BlueprintImplementableEvent)
-    void DoShootAt(const FVector& Dest);
+    //UFUNCTION(BlueprintImplementableEvent)
 
 protected:
     // --- Input Handling ---
@@ -64,8 +66,9 @@ protected:
 
     // --- Movement & Actions ---
     void DoMoveTo(const FVector& Dest);
-    void DoThrowStoneAt(const FVector& Dest);
+    void DoThrowStoneAt(const FVector& Dest,AActor* HitActor);
     void DoThrowGrenadeAt(const FVector& Dest);
+    void DoShootAt(const FVector& Dest);
 
     // --- Animation Notifications ---
     UFUNCTION() void HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
@@ -122,9 +125,13 @@ protected:
     UAnimMontage* DrawGunMontage;
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* EquipStoneMontage;
+    UPROPERTY(EditDefaultsOnly, Category = "Montages")
+    UAnimMontage* StealthMontage;
 
     UFUNCTION(BlueprintCallable)
     bool CanClickOnNode(const FVector &Dest);
+    UFUNCTION(BlueprintCallable)
+    void AttackEnemy(AActor* actor);
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);

@@ -2,8 +2,6 @@
 
 
 #include "Pickups/Stone.h"
-
-#include "Characters/Player/Zack.h"
 #include "Components/SphereComponent.h"
 #include "Interfaces/PickupInterface.h"
 
@@ -34,6 +32,7 @@ void AStone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* O
 			Pickup->AddToPickupArray(this);
 			this->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 			Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			CreateFields(SweepResult.ImpactPoint);
 		}
 	}
 }

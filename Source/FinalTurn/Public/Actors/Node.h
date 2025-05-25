@@ -18,7 +18,7 @@ public:
 	ANode();
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TObjectPtr<UStaticMeshComponent> SM_Node;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TObjectPtr<UBoxComponent> Box;
 
 protected:
