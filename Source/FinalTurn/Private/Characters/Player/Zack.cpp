@@ -182,7 +182,11 @@ void AZack::DoMoveTo(const FVector& Dest)
 	}
 	else if (!OverlappingActorsOnNode.IsEmpty())
 	{
-		AttackEnemy(OverlappingActorsOnNode[0]);
+		AEnemyBase* enemy = Cast<AEnemyBase>(OverlappingActorsOnNode[0]);
+		if (enemy)
+		{
+			AttackEnemy(OverlappingActorsOnNode[0]);
+		}
 	}
 	else
 	{
@@ -232,7 +236,7 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 			}
 			AThrowableStone* SpawnedStone = GetWorld()->SpawnActor<AThrowableStone>(ThrowableStoneClass, SocketLocation, SocketRotation);
 			FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
-			FVector ScaledForward = ForwardVector * 600.0f;
+			FVector ScaledForward = ForwardVector * 1000.0f;
 			float ZValue = ForwardVector.Z;
 			float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
 			float UpwardImpulse = MappedZ * 100.0f;
@@ -351,7 +355,11 @@ void AZack::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 			CanClickNode = true;
 			if (!OverlappingActorsOnNode.IsEmpty())
 			{
-				OverlappingActorsOnNode[0]->Destroy();
+				if ( AEnemyBase* enemy = Cast<AEnemyBase>(OverlappingActorsOnNode[0]))
+				{
+					enemy->IsDead = true;
+					//OverlappingActorsOnNode[0]->Destroy();
+				}
 			}
 		}
 }

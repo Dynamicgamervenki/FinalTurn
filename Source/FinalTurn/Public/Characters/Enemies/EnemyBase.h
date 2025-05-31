@@ -23,4 +23,7 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool IsDead = false;
 };
