@@ -36,6 +36,10 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	bool bIsEndNode;
+	UPROPERTY(EditAnywhere)
+	bool bDontGoToNode = false;
+public : 
+	FORCEINLINE bool DontGoToNode() { return bDontGoToNode; }
 	
 };
   

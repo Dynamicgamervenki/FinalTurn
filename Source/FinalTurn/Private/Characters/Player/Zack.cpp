@@ -5,6 +5,7 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Actors/Node.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Breakable/BreakableActor.h"
 #include "Characters/Enemies/EnemyBase.h"
@@ -112,7 +113,13 @@ void AZack::OnInteract()
 		 			}
 				    else
 				    {
-		 				DoMoveTo(MoveLocation);
+				    	if (ANode* node = Cast<ANode>(Hit.GetActor()))
+				    	{
+				    		bool temp = node->DontGoToNode();
+				    		if (!temp)
+				    			DoMoveTo(MoveLocation);
+				    	}
+
 				    }
 		 			break;
 		 		case EEquipState::Stone:
@@ -164,6 +171,10 @@ void AZack::EquipStone()
 		Stone->AttachToComponent(GetMesh(), TransformRules,"Stone_Socket");
 		EquipState = EEquipState::Stone;
 	}
+	else
+	{
+		EquipState = EEquipState::None;
+	}
 }
 
 void AZack::EquipGranade()
@@ -183,7 +194,7 @@ void AZack::DoMoveTo(const FVector& Dest)
 	else if (!OverlappingActorsOnNode.IsEmpty())
 	{
 		AEnemyBase* enemy = Cast<AEnemyBase>(OverlappingActorsOnNode[0]);
-		if (enemy)
+		if (enemy && enemy->GetVelocity().SizeSquared() <= KINDA_SMALL_NUMBER)
 		{
 			AttackEnemy(OverlappingActorsOnNode[0]);
 		}
@@ -357,6 +368,7 @@ void AZack::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 			{
 				if ( AEnemyBase* enemy = Cast<AEnemyBase>(OverlappingActorsOnNode[0]))
 				{
+	                enemy->GetCharacterMovement()->StopMovementImmediately();
 					enemy->IsDead = true;
 					//OverlappingActorsOnNode[0]->Destroy();
 				}
