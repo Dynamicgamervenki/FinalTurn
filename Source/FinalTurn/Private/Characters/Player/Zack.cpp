@@ -70,7 +70,7 @@ void AZack::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	PrintOutData();
 	
-	if (TargetEnemyLocation != FVector::ZeroVector)
+	/*if (TargetEnemyLocation != FVector::ZeroVector)
 	{
 		double Distance = FVector::Dist(GetActorLocation(),TargetEnemyLocation);
 		GEngine->AddOnScreenDebugMessage(126, 4.0f, FColor::Black, FString::Printf(TEXT("Distance: %f"), Distance));
@@ -81,7 +81,7 @@ void AZack::Tick(float DeltaTime)
 			PlayAnimMontages(StealthMontage);
 			TargetEnemyLocation = FVector::ZeroVector;
 		}
-	}
+	}*/
 }
 
 void AZack::OnInteract()
@@ -91,18 +91,18 @@ void AZack::OnInteract()
 	PlayerController->GetHitResultUnderCursorForObjects(ObjectTypes,true,Hit);
 	if (Hit.bBlockingHit && CanClickNode)
 	{
-		if (AEnemyBase* Enemy = Cast<AEnemyBase>(Hit.GetActor()))
-		{
-			GEngine->AddOnScreenDebugMessage(345,2.0f,FColor::Green,"ClickedOnCharacter");
-			OverlappingActorsOnNode.Add(Enemy);
-			 AttackEnemy(Enemy);
-		}
+		// if (AEnemyBase* Enemy = Cast<AEnemyBase>(Hit.GetActor()))
+		// {
+		// 	GEngine->AddOnScreenDebugMessage(345,2.0f,FColor::Green,"ClickedOnCharacter");
+		// 	OverlappingActorsOnNode.Add(Enemy);
+		// 	 AttackEnemy(Enemy);
+		// }
 		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Hit Actor: %s"), Hit.GetActor() ? *Hit.GetActor()->GetName() : TEXT("None")));
-		else if( Hit.GetActor()->Implements<UInteractInterface>())
+		if( Hit.GetActor()->Implements<UInteractInterface>())
 		{
 		 	if (IInteractInterface* Interact = Cast<IInteractInterface>(Hit.GetActor()))
 		 	{
-		 		const FVector MoveLocation  = Interact->InteractPosition();
+		 		MoveLocation  = Interact->InteractPosition();
 		 		OverlappingActorsOnNode = Interact->GetOverlappingActorsOnNode(); 		
 		 		switch (EquipState)
 		 		{
@@ -185,13 +185,13 @@ void AZack::EquipGranade()
 void AZack::DoMoveTo(const FVector& Dest)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f && OverlappingActorsOnNode.IsEmpty()) 
+	if (distance <= moveDistance && distance > 100.0f /*&& OverlappingActorsOnNode.IsEmpty()*/) 
 	{
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
 		IsMoving = true;
 		CanClickNode = false;
 	}
-	else if (!OverlappingActorsOnNode.IsEmpty())
+	/*else if (!OverlappingActorsOnNode.IsEmpty())
 	{
 		AEnemyBase* enemy = Cast<AEnemyBase>(OverlappingActorsOnNode[0]);
 		if (enemy && enemy->GetVelocity().SizeSquared() <= KINDA_SMALL_NUMBER)
@@ -202,7 +202,7 @@ void AZack::DoMoveTo(const FVector& Dest)
 	else
 	{
 		GEngine->AddOnScreenDebugMessage(16,2,FColor::Red,"Distance > 200 units");
-	}
+	}*/
 }
 
 void AZack::DoThrowStoneAt(const FVector& Dest,AActor* HitActor)

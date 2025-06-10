@@ -132,6 +132,10 @@ protected:
     bool CanClickOnNode(const FVector &Dest);
     UFUNCTION(BlueprintCallable)
     void AttackEnemy(AActor* actor);
+
+    UPROPERTY(BlueprintReadWrite)
+    FVector MoveLocation;
+    
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);
@@ -144,5 +148,6 @@ private:
     TArray<AActor*> OverlappingActorsOnNode;
     UPROPERTY(VisibleAnywhere)
     FVector TargetEnemyLocation = FVector::ZeroVector;
+
 
 };
