@@ -30,25 +30,24 @@ void APickup::BeginPlay()
 void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	AZack* Zack = Cast<AZack>(OtherActor);
-	if (Zack)
+	if (OtherActor->Implements<UPickupInterface	>())
 	{
 		PlayPickUpSound(GetActorLocation());
-		Zack->SetPickupItem(this);
-		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
-		ItemMesh->AttachToComponent(Zack->GetMesh(), TransformRules,"Socket_Gun");
+		IPickupInterface* Pickup = Cast<IPickupInterface>(OtherActor);
+		if (Pickup && OtherActor)
+		{
+			Pickup->OnPickedUp(PickupType,PickupAmount);
+			Pickup->AddToPickupArray(this);
+			this->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+			Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
 	}
 }
 
 void APickup::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	// AZack* Zack = Cast<AZack>(OtherActor);
-	// if (Zack)
-	// {
-	// 	//Zack->SetPickupItem(nullptr);
-	// 	Destroy();
-	// }
+	
 }
 
 void APickup::Tick(float DeltaTime)

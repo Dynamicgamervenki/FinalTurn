@@ -61,12 +61,12 @@ protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
     UFUNCTION(BlueprintCallable) void EquipWeapon();
-    UFUNCTION(BlueprintCallable) void EquipStone();
+    UFUNCTION(BlueprintCallable) void EquipPickUp(TSubclassOf<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
     UFUNCTION(BlueprintCallable) void EquipGranade();
 
     // --- Movement & Actions ---
     void DoMoveTo(const FVector& Dest);
-    void DoThrowStoneAt(const FVector& Dest,AActor* HitActor);
+    void DoThrowEquipItem(const FVector& Dest,AActor* HitActor);
     void DoThrowGrenadeAt(const FVector& Dest);
     void DoShootAt(const FVector& Dest);
 
@@ -115,7 +115,8 @@ protected:
 
     // --- Projectile Classes ---
     UPROPERTY(EditAnywhere) UClass* ThrowableStoneClass;
-    UPROPERTY(EditAnywhere) UClass* StoneClass;
+    UPROPERTY(EditAnywhere) UClass* ThrowableGrenadeClass;
+    UPROPERTY(EditAnywhere) UClass* PickUpClass;
     UPROPERTY(EditAnywhere) UClass* BulletClass;
 
     // --- Animation Montages ---
@@ -138,6 +139,9 @@ protected:
     
     UFUNCTION(BlueprintImplementableEvent)
     void PlayInteractionSound(FVector Location);
+
+    UFUNCTION()
+    bool HasAmmoForEquipState(EEquipState State);
     
 private:
     UFUNCTION()

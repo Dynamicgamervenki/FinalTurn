@@ -15,7 +15,7 @@
 #include "Interfaces/InteractInterface.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Pickups/Stone.h"
-#include "Pickups/ThrowableStone.h"
+#include "Pickups/ThrowableItem.h"
 AZack::AZack()
 {
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -60,8 +60,8 @@ void AZack::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 			EnhancedInputComponent->BindAction(IA_Move,ETriggerEvent::Started,this,&AZack::OnInteract);
-			EnhancedInputComponent->BindAction(IA_EquipWeapon,ETriggerEvent::Started,this,&AZack::EquipWeapon);
-		    EnhancedInputComponent->BindAction(IA_EquipStone,ETriggerEvent::Started,this,&AZack::EquipStone);
+			//EnhancedInputComponent->BindAction(IA_EquipWeapon,ETriggerEvent::Started,this,&AZack::EquipWeapon);
+		    //EnhancedInputComponent->BindAction(IA_EquipStone,ETriggerEvent::Started,this,&AZack::EquipPickUp);
 	}
 	
 }
@@ -112,11 +112,11 @@ void AZack::OnInteract()
 				    }
 		 			break;
 		 		case EEquipState::Stone:
-		 			DoThrowStoneAt(MoveLocation,Hit.GetActor());
+		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
 		 			break;
 
 		 		case EEquipState::Grenade:
-		 			DoThrowGrenadeAt(MoveLocation);
+		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
 		 			break;
 
 		 		case EEquipState::Gun:
@@ -142,9 +142,9 @@ void AZack::EquipWeapon()
 }
 
 
-void AZack::EquipStone()
+/*void AZack::EquipPickUp(TSubclassOf<APickup> InPickUpClass , FName SocketName , EEquipState InEquipState)
 {
-	if (StoneCount > 0 && EquipState != EEquipState::Stone)
+	if (EquipState != EEquipState::Stone)
 	{
 		if (EquipState == EEquipState::Gun)
 		{
@@ -153,19 +153,78 @@ void AZack::EquipStone()
 		}
 		FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
 		FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
-		AStone* Stone = GetWorld()->SpawnActor<AStone>(StoneClass,SocketLocation,SocketRotation);
+		APickup* Stone = GetWorld()->SpawnActor<APickup>(InPickUpClass,SocketLocation,SocketRotation);
 		Stone->Sphere->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 		SetEquippedItem(Stone);
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
 		PlayAnimMontages(EquipStoneMontage);
 		Stone->AttachToComponent(GetMesh(), TransformRules,"Stone_Socket");
-		EquipState = EEquipState::Stone;
+		EquipState = InEquipState;
 	}
 	else
 	{
 		EquipState = EEquipState::None;
 	}
+}*/
+
+void AZack::EquipPickUp(TSubclassOf<APickup> InPickUpClass, FName SocketName, EEquipState InEquipState)
+{
+	if (EquipState == InEquipState || !InPickUpClass)
+	{
+		if (EquippedItem)
+		{
+			EquippedItem->Destroy();
+			EquippedItem = nullptr;
+		}
+		EquipState = EEquipState::None;
+		return;
+	}
+	
+	if (!HasAmmoForEquipState(InEquipState))
+	{
+		EquipState = EEquipState::None;
+		return;
+	}
+
+	if (EquipState != InEquipState)
+	{
+		if (EquipState == EEquipState::Gun)
+		{
+			PlayAnimMontageInReverse(DrawGunMontage);
+			PickupItem->SetActorHiddenInGame(true);
+		}
+
+		FVector SocketLocation = GetMesh()->GetSocketLocation(SocketName);
+		FRotator SocketRotation = GetMesh()->GetSocketRotation(SocketName);
+		APickup* Pickup = GetWorld()->SpawnActor<APickup>(InPickUpClass, SocketLocation, SocketRotation);
+		
+		if (!Pickup) return;
+
+		Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		SetEquippedItem(Pickup);
+
+		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
+		PlayAnimMontages(EquipStoneMontage);
+		Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
+
+		EquipState = InEquipState;
+	}
 }
+
+bool AZack::HasAmmoForEquipState(EEquipState State)
+{
+	switch (State)
+	{
+	case EEquipState::Stone:
+		return StoneCount > 0;
+	case EEquipState::Grenade:
+		return GranadeCount > 0;
+	default:
+		return false;
+	}
+}
+
+
 
 void AZack::EquipGranade()
 {
@@ -181,23 +240,12 @@ void AZack::DoMoveTo(const FVector& Dest)
 		IsMoving = true;
 		CanClickNode = false;
 	}
-	/*else if (!OverlappingActorsOnNode.IsEmpty())
-	{
-		AEnemyBase* enemy = Cast<AEnemyBase>(OverlappingActorsOnNode[0]);
-		if (enemy && enemy->GetVelocity().SizeSquared() <= KINDA_SMALL_NUMBER)
-		{
-			AttackEnemy(OverlappingActorsOnNode[0]);
-		}
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(16,2,FColor::Red,"Distance > 200 units");
-	}*/
 }
 
-void AZack::DoThrowStoneAt(const FVector& Dest,AActor* HitActor)
+/*
+void AZack::DoThrowEquipItem(const FVector& Dest,AActor* HitActor)
 {
-	if (StoneCount > 0 && EquipState == EEquipState::Stone && CanClickOnNode(Dest))
+	if (GranadeCount > 0 && EquipState == EEquipState::Grenade && CanClickOnNode(Dest))
 	{
 		CanClickNode = false;
 		FRotator lookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),Dest);
@@ -219,9 +267,96 @@ void AZack::DoThrowStoneAt(const FVector& Dest,AActor* HitActor)
 		}
 	}
 }
+*/
+
+void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
+{
+	if (!CanClickOnNode(Dest))
+	{
+		GEngine->AddOnScreenDebugMessage(16, 2, FColor::Red, "TRYING TO THROW AT DISTANCE > 500");
+		return;
+	}
+
+	if (!HasAmmoForEquipState(EquipState))
+	{
+		GEngine->AddOnScreenDebugMessage(16, 3, FColor::Green, "No ammo, switching state");
+		EquipState = EEquipState::None;
+		DoMoveTo(Dest);
+
+		if (EquippedItem)
+		{
+			EquippedItem->Destroy();
+		}
+		return;
+	}
+
+	// Proceed with throw
+	CanClickNode = false;
+	FRotator LookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Dest);
+	SetActorRotation(LookRotator);
+	PlayAnimMontages(ThrowMontage);
+}
+
+void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
+{
+	if (NotifyName != "Throw") return;
+
+	FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
+	FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
+
+	TSubclassOf<AThrowableItem> ThrowableClass = nullptr;
+
+	switch (EquipState)
+	{
+	case EEquipState::Stone:
+		ThrowableClass = ThrowableStoneClass;
+		break;
+	case EEquipState::Grenade:
+		ThrowableClass = ThrowableGrenadeClass;
+		break;
+	default:
+		break;
+	}
+
+	if (ThrowableClass && GetWorld())
+	{
+		if (EquippedItem)
+		{
+			EquippedItem->Destroy();
+		}
+
+		AThrowableItem* SpawnedItem = GetWorld()->SpawnActor<AThrowableItem>(ThrowableClass, SocketLocation, SocketRotation);
+		if (SpawnedItem && SpawnedItem->SM_Throwable)
+		{
+			FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
+			FVector ScaledForward = ForwardVector * 500.0f;
+			float ZValue = ForwardVector.Z;
+			float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
+			float UpwardImpulse = MappedZ * 100.0f;
+			FVector FinalImpulse = ScaledForward + FVector(0.0f, 0.0f, UpwardImpulse);
+
+			SpawnedItem->SM_Throwable->SetMassOverrideInKg(NAME_None, 1.0f, true);
+			SpawnedItem->SM_Throwable->AddImpulse(FinalImpulse);
+		}
+
+		// Deduct ammo
+		switch (EquipState)
+		{
+		case EEquipState::Stone:   StoneCount--; break;
+		case EEquipState::Grenade: GranadeCount--; break;
+		default: break;
+		}
+
+		CanClickNode = true;
+		EquipState = EEquipState::None;
+	}
+}
 
 
 
+
+
+/*
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
 	if (NotifyName == "Throw")
@@ -251,6 +386,7 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 		}
 	}
 }
+*/
 
 void AZack::DoThrowGrenadeAt(const FVector& Dest)
 {

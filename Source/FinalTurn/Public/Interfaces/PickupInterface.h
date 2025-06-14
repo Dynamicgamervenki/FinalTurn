@@ -5,15 +5,8 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "Pickups/Pickup.h"
+#include "Pickups/PickupType.h"
 #include "PickupInterface.generated.h"
-
-UENUM(BlueprintType)
-enum class EPickupType : uint8
-{
-	Bullet  UMETA(DisplayName = "Bullet"),
-	Stone  UMETA(DisplayName = "Stone"),
-    Granade UMETA(DisplayName = "Granade")
-};
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -22,9 +15,6 @@ class UPickupInterface : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class FINALTURN_API IPickupInterface
 {
 	GENERATED_BODY()

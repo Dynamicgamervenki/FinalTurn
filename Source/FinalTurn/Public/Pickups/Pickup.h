@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Pickups/PickupType.h"
 #include "Pickup.generated.h"
 
 class USphereComponent;
@@ -35,5 +36,11 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayPickUpSound(FVector Location);
+
+	UPROPERTY(BlueprintReadWrite)
+	EPickupType PickupType;
+
+	UPROPERTY(EditInstanceOnly,BlueprintReadWrite)
+	int PickupAmount;
 
 };
