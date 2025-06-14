@@ -33,4 +33,7 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* Sphere;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayPickUpSound(FVector Location);
+
 };

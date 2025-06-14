@@ -21,6 +21,6 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	UStaticMeshComponent* SM_Stone;
 };

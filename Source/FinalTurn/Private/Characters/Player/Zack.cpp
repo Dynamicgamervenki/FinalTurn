@@ -10,6 +10,7 @@
 #include "Breakable/BreakableActor.h"
 #include "Characters/Enemies/EnemyBase.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/InteractInterface.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -69,19 +70,6 @@ void AZack::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	PrintOutData();
-	
-	/*if (TargetEnemyLocation != FVector::ZeroVector)
-	{
-		double Distance = FVector::Dist(GetActorLocation(),TargetEnemyLocation);
-		GEngine->AddOnScreenDebugMessage(126, 4.0f, FColor::Black, FString::Printf(TEXT("Distance: %f"), Distance));
-		if (Distance < 100.0f)
-		{
-			CanClickNode = false;
-			GEngine->AddOnScreenDebugMessage(143,2.0f,FColor::Green,"need to play stealthAnim");
-			PlayAnimMontages(StealthMontage);
-			TargetEnemyLocation = FVector::ZeroVector;
-		}
-	}*/
 }
 
 void AZack::OnInteract()
@@ -91,6 +79,7 @@ void AZack::OnInteract()
 	PlayerController->GetHitResultUnderCursorForObjects(ObjectTypes,true,Hit);
 	if (Hit.bBlockingHit && CanClickNode)
 	{
+		PlayInteractionSound(Hit.ImpactPoint);
 		// if (AEnemyBase* Enemy = Cast<AEnemyBase>(Hit.GetActor()))
 		// {
 		// 	GEngine->AddOnScreenDebugMessage(345,2.0f,FColor::Green,"ClickedOnCharacter");
@@ -165,6 +154,7 @@ void AZack::EquipStone()
 		FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
 		FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
 		AStone* Stone = GetWorld()->SpawnActor<AStone>(StoneClass,SocketLocation,SocketRotation);
+		Stone->Sphere->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 		SetEquippedItem(Stone);
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
 		PlayAnimMontages(EquipStoneMontage);
@@ -247,13 +237,13 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 			}
 			AThrowableStone* SpawnedStone = GetWorld()->SpawnActor<AThrowableStone>(ThrowableStoneClass, SocketLocation, SocketRotation);
 			FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
-			FVector ScaledForward = ForwardVector * 1000.0f;
+			FVector ScaledForward = ForwardVector * 500.0f;
 			float ZValue = ForwardVector.Z;
 			float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
 			float UpwardImpulse = MappedZ * 100.0f;
 
 			FVector FinalImpulse = ScaledForward + FVector(0.0f, 0.0f, UpwardImpulse);
-			
+			SpawnedStone->SM_Stone->SetMassOverrideInKg(NAME_None, 1.0f, true);
 			SpawnedStone->SM_Stone->AddImpulse(FinalImpulse);
 			StoneCount--;
 			CanClickNode = true;
@@ -358,7 +348,7 @@ void AZack::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 		if (Montage == EquipStoneMontage && EquippedItem)
 		{
-			EquippedItem->Destroy();
+			//EquippedItem->Destroy();
 		}
 		else if (Montage == StealthMontage)
 		{

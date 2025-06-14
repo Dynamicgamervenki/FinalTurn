@@ -25,6 +25,7 @@ void AStone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* O
 {
 	if (OtherActor->Implements<UPickupInterface	>())
 	{
+		PlayPickUpSound(GetActorLocation());
 		IPickupInterface* Pickup = Cast<IPickupInterface>(OtherActor);
 		if (Pickup && OtherActor)
 		{

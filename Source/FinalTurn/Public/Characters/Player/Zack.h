@@ -136,6 +136,9 @@ protected:
     UPROPERTY(BlueprintReadWrite)
     FVector MoveLocation;
     
+    UFUNCTION(BlueprintImplementableEvent)
+    void PlayInteractionSound(FVector Location);
+    
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);

@@ -33,6 +33,7 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	AZack* Zack = Cast<AZack>(OtherActor);
 	if (Zack)
 	{
+		PlayPickUpSound(GetActorLocation());
 		Zack->SetPickupItem(this);
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
 		ItemMesh->AttachToComponent(Zack->GetMesh(), TransformRules,"Socket_Gun");
