@@ -2,9 +2,10 @@
 
 
 #include "Actors/Node.h"
-
+#include "Save/PlayerSave.h"
 #include "Characters/Player/Zack.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 ANode::ANode()
@@ -39,6 +40,11 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 {
 	if (AZack* Zack = Cast<AZack>(OtherActor))
 	{
+		if (Is_EndNode)
+		{
+			UGameplayStatics::OpenLevel(this,LevelName);
+			GetCompletedLevel();
+		}
 		Zack->IsMoving = false;
 		Zack->CanClickNode = true;
 	}

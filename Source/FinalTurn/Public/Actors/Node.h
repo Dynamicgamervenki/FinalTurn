@@ -33,13 +33,20 @@ protected:
 
 	virtual FVector InteractPosition() override;
 	virtual TArray<AActor*> GetOverlappingActorsOnNode() override;
-	
-	UPROPERTY(EditAnywhere)
-	bool bIsEndNode;
 	UPROPERTY(EditAnywhere)
 	bool bDontGoToNode = false;
 public : 
 	FORCEINLINE bool DontGoToNode() { return bDontGoToNode; }
+		
+	UPROPERTY(EditAnywhere, Category= Default)
+	bool Is_EndNode;
+	UPROPERTY(EditAnywhere,Category= Default)
+	FName LevelName;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	int CurrentLevelNo;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void GetCompletedLevel();
 	
 };
   
