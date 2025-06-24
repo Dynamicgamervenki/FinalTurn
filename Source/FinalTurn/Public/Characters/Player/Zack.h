@@ -10,6 +10,7 @@ class UInputMappingContext;
 class UInputAction;
 class APickup;
 class UAnimMontage;
+class AThrowableItem;
 
 UENUM(BlueprintType)
 enum class EEquipState : uint8
@@ -61,7 +62,8 @@ protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
     UFUNCTION(BlueprintCallable) void EquipWeapon();
-    UFUNCTION(BlueprintCallable) void EquipPickUp(TSubclassOf<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
+    //UFUNCTION(BlueprintCallable) void EquipPickUp(TSubclassOf<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
+    UFUNCTION(BlueprintCallable) void EquipPickUp(TSoftClassPtr<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
     UFUNCTION(BlueprintCallable) void EquipGranade();
 
     // --- Movement & Actions ---
@@ -114,10 +116,16 @@ protected:
     int32 GranadeCount;
 
     // --- Projectile Classes ---
-    UPROPERTY(EditAnywhere) UClass* ThrowableStoneClass;
-    UPROPERTY(EditAnywhere) UClass* ThrowableGrenadeClass;
+  //  UPROPERTY(EditAnywhere) UClass* ThrowableStoneClass;
+    //UPROPERTY(EditAnywhere) UClass* ThrowableGrenadeClass;
+    UPROPERTY(EditAnywhere)
+    TSoftClassPtr<AThrowableItem> ThrowableStoneClass;
+
+    UPROPERTY(EditAnywhere)
+    TSoftClassPtr<AThrowableItem> ThrowableGrenadeClass;
+    
     UPROPERTY(EditAnywhere) UClass* PickUpClass;
-    UPROPERTY(EditAnywhere) UClass* BulletClass;
+   // UPROPERTY(EditAnywhere) UClass* BulletClass;
 
     // --- Animation Montages ---
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
@@ -142,6 +150,16 @@ protected:
 
     UFUNCTION()
     bool HasAmmoForEquipState(EEquipState State);
+
+    UFUNCTION()
+    void OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState);
+
+    UFUNCTION()
+    void OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass);
+
+    UPROPERTY()
+    TArray<AThrowableItem*> Throwables;
+
     
 private:
     UFUNCTION()

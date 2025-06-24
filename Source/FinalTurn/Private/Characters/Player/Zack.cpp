@@ -11,6 +11,8 @@
 #include "Characters/Enemies/EnemyBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/InteractInterface.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -167,9 +169,9 @@ void AZack::EquipWeapon()
 	}
 }*/
 
-void AZack::EquipPickUp(TSubclassOf<APickup> InPickUpClass, FName SocketName, EEquipState InEquipState)
+void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, EEquipState InEquipState)
 {
-	if (EquipState == InEquipState || !InPickUpClass)
+	if (EquipState == InEquipState || !InPickUpClass.IsValid())
 	{
 		if (EquippedItem)
 		{
@@ -179,37 +181,81 @@ void AZack::EquipPickUp(TSubclassOf<APickup> InPickUpClass, FName SocketName, EE
 		EquipState = EEquipState::None;
 		return;
 	}
-	
+
 	if (!HasAmmoForEquipState(InEquipState))
 	{
 		EquipState = EEquipState::None;
 		return;
 	}
 
-	if (EquipState != InEquipState)
+	if (EquipState == EEquipState::Gun)
 	{
-		if (EquipState == EEquipState::Gun)
+		PlayAnimMontageInReverse(DrawGunMontage);
+		if (PickupItem)
 		{
-			PlayAnimMontageInReverse(DrawGunMontage);
 			PickupItem->SetActorHiddenInGame(true);
 		}
+	}
 
-		FVector SocketLocation = GetMesh()->GetSocketLocation(SocketName);
-		FRotator SocketRotation = GetMesh()->GetSocketRotation(SocketName);
-		APickup* Pickup = GetWorld()->SpawnActor<APickup>(InPickUpClass, SocketLocation, SocketRotation);
-		
-		if (!Pickup) return;
+	//  Async load the pickup class
+	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+	Streamable.RequestAsyncLoad(
+		InPickUpClass.ToSoftObjectPath(),
+		FStreamableDelegate::CreateUObject(
+			this, &AZack::OnPickupClassLoaded, InPickUpClass, SocketName, InEquipState
+		)
+	);
 
-		Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-		SetEquippedItem(Pickup);
+	//  Preload the corresponding throwable class too
+	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
+	switch (InEquipState)
+	{
+	case EEquipState::Stone:
+		SoftThrowableClass = ThrowableStoneClass;
+		break;
+	case EEquipState::Grenade:
+		SoftThrowableClass = ThrowableGrenadeClass;
+		break;
+	default:
+		break;
+	}
 
-		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
-		PlayAnimMontages(EquipStoneMontage);
-		Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
-
-		EquipState = InEquipState;
+	if (!SoftThrowableClass.IsValid())
+	{
+		Streamable.RequestAsyncLoad(
+			SoftThrowableClass.ToSoftObjectPath(),
+			FStreamableDelegate(),
+			0,
+			false,
+			false,
+			FString::Printf(TEXT("Preloading Throwable for %s"), *UEnum::GetValueAsString(InEquipState))
+		);
 	}
 }
+
+
+void AZack::OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState)
+{
+	if (!LoadedClass.IsValid()) return;
+
+	UClass* ActualClass = LoadedClass.Get();
+
+	FVector SocketLocation = GetMesh()->GetSocketLocation(SocketName);
+	FRotator SocketRotation = GetMesh()->GetSocketRotation(SocketName);
+
+	APickup* Pickup = GetWorld()->SpawnActor<APickup>(ActualClass, SocketLocation, SocketRotation);
+	if (!Pickup) return;
+
+	Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	SetEquippedItem(Pickup);
+
+	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
+	PlayAnimMontages(EquipStoneMontage);
+	Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
+
+	EquipState = InEquipState;
+}
+
 
 bool AZack::HasAmmoForEquipState(EEquipState State)
 {
@@ -242,33 +288,6 @@ void AZack::DoMoveTo(const FVector& Dest)
 	}
 }
 
-/*
-void AZack::DoThrowEquipItem(const FVector& Dest,AActor* HitActor)
-{
-	if (GranadeCount > 0 && EquipState == EEquipState::Grenade && CanClickOnNode(Dest))
-	{
-		CanClickNode = false;
-		FRotator lookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),Dest);
-		SetActorRotation(lookRotator);
-		PlayAnimMontages(ThrowMontage);
-	}
-	else if (!CanClickOnNode(Dest))
-	{
-		GEngine->AddOnScreenDebugMessage(16,2,FColor::Red,"TRYING TO THROW AT DISTANCE > 500");
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(16,3,FColor::Green,"Stone count 0 , switching state");
-		EquipState = EEquipState::None;
-		DoMoveTo(Dest);
-		if (EquippedItem != nullptr)
-		{
-			EquippedItem->Destroy();
-		}
-	}
-}
-*/
-
 void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
 {
 	if (!CanClickOnNode(Dest))
@@ -297,59 +316,74 @@ void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
 	PlayAnimMontages(ThrowMontage);
 }
 
+
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
 	if (NotifyName != "Throw") return;
 
-	FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
-	FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
-
-	TSubclassOf<AThrowableItem> ThrowableClass = nullptr;
+	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
 
 	switch (EquipState)
 	{
 	case EEquipState::Stone:
-		ThrowableClass = ThrowableStoneClass;
+		SoftThrowableClass = ThrowableStoneClass;
 		break;
 	case EEquipState::Grenade:
-		ThrowableClass = ThrowableGrenadeClass;
+		SoftThrowableClass = ThrowableGrenadeClass;
 		break;
 	default:
-		break;
+		return;
 	}
-
-	if (ThrowableClass && GetWorld())
+	
+	if (SoftThrowableClass.IsValid())
 	{
-		if (EquippedItem)
-		{
-			EquippedItem->Destroy();
-		}
-
-		AThrowableItem* SpawnedItem = GetWorld()->SpawnActor<AThrowableItem>(ThrowableClass, SocketLocation, SocketRotation);
-		if (SpawnedItem && SpawnedItem->SM_Throwable)
-		{
-			FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
-			FVector ScaledForward = ForwardVector * 500.0f;
-			float ZValue = ForwardVector.Z;
-			float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
-			float UpwardImpulse = MappedZ * 100.0f;
-			FVector FinalImpulse = ScaledForward + FVector(0.0f, 0.0f, UpwardImpulse);
-
-			SpawnedItem->SM_Throwable->SetMassOverrideInKg(NAME_None, 1.0f, true);
-			SpawnedItem->SM_Throwable->AddImpulse(FinalImpulse);
-		}
-
-		// Deduct ammo
-		switch (EquipState)
-		{
-		case EEquipState::Stone:   StoneCount--; break;
-		case EEquipState::Grenade: GranadeCount--; break;
-		default: break;
-		}
-
-		CanClickNode = true;
-		EquipState = EEquipState::None;
+		OnThrowableLoaded(SoftThrowableClass);
 	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Throwable class was not loaded at throw time — preload may have failed."));
+	}
+}
+
+
+void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
+{
+	if (!LoadedClass.IsValid()) return;
+
+	UClass* ActualClass = LoadedClass.Get();
+	if (!ActualClass || !GetWorld()) return;
+
+	if (EquippedItem)
+	{
+		EquippedItem->Destroy();
+	}
+
+	FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
+	FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
+
+	AThrowableItem* SpawnedItem = GetWorld()->SpawnActor<AThrowableItem>(ActualClass, SocketLocation, SocketRotation);
+	if (!SpawnedItem || !SpawnedItem->SM_Throwable) return;
+
+	FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
+	FVector ScaledForward = ForwardVector * 500.0f;
+	float ZValue = ForwardVector.Z;
+	float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
+	float UpwardImpulse = MappedZ * 100.0f;
+	FVector FinalImpulse = ScaledForward + FVector(0.0f, 0.0f, UpwardImpulse);
+
+	SpawnedItem->SM_Throwable->SetMassOverrideInKg(NAME_None, 1.0f, true);
+	SpawnedItem->SM_Throwable->AddImpulse(FinalImpulse);
+
+	// Deduct ammo
+	switch (EquipState)
+	{
+	case EEquipState::Stone:   StoneCount--; break;
+	case EEquipState::Grenade: GranadeCount--; break;
+	default: break;
+	}
+
+	CanClickNode = true;
+	EquipState = EEquipState::None;
 }
 
 
@@ -404,7 +438,7 @@ void AZack::DoThrowGrenadeAt(const FVector& Dest)
 	{
  		GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,"Shooting");
 		FVector SocketLocation = GetMesh()->GetSocketLocation("socket_BulletSpawn");
-		AActor* Bullet = GetWorld()->SpawnActor<AActor>(BulletClass,SocketLocation,LookRotator);
+		//AActor* Bullet = GetWorld()->SpawnActor<AActor>(BulletClass,SocketLocation,LookRotator);
 		BulletCount--;
 	}
 	else
