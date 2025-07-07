@@ -26,8 +26,7 @@ ANode::ANode()
 void ANode::BeginPlay()
 {
 	Super::BeginPlay();
-
-
+	
 }
 
 void ANode::Tick(float DeltaTime)
@@ -45,6 +44,7 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 			UGameplayStatics::OpenLevel(this,LevelName);
 			GetCompletedLevel();
 		}
+		GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
 		Zack->IsMoving = false;
 		Zack->CanClickNode = true;
 	}
@@ -56,14 +56,37 @@ void ANode::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 	
 }
 
-FVector ANode::InteractPosition()
+FVector ANode::InteractPosition_Implementation()
 {
 	return Box->GetComponentLocation();
 }
 
-TArray<AActor*> ANode::GetOverlappingActorsOnNode()
+TArray<AActor*> ANode::GetOverlappingActorsOnNode_Implementation()
 {
 	TArray<AActor*> OverlappingActors;
 	Box->GetOverlappingActors(OverlappingActors);
 	return OverlappingActors;
+}
+
+void ANode::Interact_Implementation(AActor* Interactor)
+{
+	GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("node interaction null"));
+	//do nothing
+	FVector MoveToLocation;
+	AZack* Zack = Cast<AZack>(Interactor);
+	if (Zack)
+	{
+		if (bStopBeforeUnits)
+		{
+			FVector BoxLocation = Box->GetComponentLocation();
+			FVector PlayerLocation = Zack->GetActorLocation();
+			FVector Direction = (BoxLocation - PlayerLocation).GetSafeNormal();
+			MoveToLocation = BoxLocation - Direction * UnitsBeforeStop;
+		}
+		else
+		{
+			MoveToLocation =  Box->GetComponentLocation();
+		}
+		Zack->DoMoveTo(MoveToLocation);
+	}
 }

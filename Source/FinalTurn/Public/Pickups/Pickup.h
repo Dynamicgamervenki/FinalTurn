@@ -41,6 +41,6 @@ public:
 	EPickupType PickupType;
 
 	UPROPERTY(EditInstanceOnly,BlueprintReadWrite)
-	int PickupAmount;
+	int PickupAmount = 0;
 
 };

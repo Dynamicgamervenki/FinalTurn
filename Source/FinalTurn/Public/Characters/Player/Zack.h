@@ -21,6 +21,8 @@ enum class EEquipState : uint8
     Gun      UMETA(DisplayName = "Gun")
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPickupUpdated, EPickupType, PickupType, int32, NewAmount);
+
 UCLASS()
 class FINALTURN_API AZack : public ACharacter, public IPickupInterface
 {
@@ -29,6 +31,8 @@ class FINALTURN_API AZack : public ACharacter, public IPickupInterface
 public:
     AZack();
 
+    UPROPERTY(BlueprintAssignable)
+    FOnPickupUpdated OnPickupUpdated;
     // --- Unreal Overrides ---
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     virtual void BeginPlay() override;
@@ -36,6 +40,8 @@ public:
 
     // --- Pickup Interface ---
     virtual void OnPickedUp(EPickupType PickupType, int32 Amount) override;
+    virtual ACharacter* GetZackReference_Implementation() override;
+    virtual void SetDetectedByEnemy_Implementation(bool bDetected) override;
     
     /** Is character currently moving? */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
@@ -44,9 +50,13 @@ public:
     /** Can click nodes? */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     bool CanClickNode = true;
+    virtual void SetCanClickOnNode_Implementation(bool click) override;
     
+    /** Detected By Enemy? */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Life")
     bool IsAlive = true;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Life")
+    bool GotDetectedByEnemy = false;
     
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     bool IsGunAiming = false;
@@ -57,19 +67,16 @@ public:
 
     // --- Blueprint Event for Shooting ---
     //UFUNCTION(BlueprintImplementableEvent)
+    void DoMoveTo(const FVector& Dest);
 
 protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
     UFUNCTION(BlueprintCallable) void EquipWeapon();
-    //UFUNCTION(BlueprintCallable) void EquipPickUp(TSubclassOf<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
     UFUNCTION(BlueprintCallable) void EquipPickUp(TSoftClassPtr<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
-    UFUNCTION(BlueprintCallable) void EquipGranade();
 
     // --- Movement & Actions ---
-    void DoMoveTo(const FVector& Dest);
     void DoThrowEquipItem(const FVector& Dest,AActor* HitActor);
-    void DoThrowGrenadeAt(const FVector& Dest);
     void DoShootAt(const FVector& Dest);
 
     // --- Animation Notifications ---
@@ -139,8 +146,6 @@ protected:
 
     UFUNCTION(BlueprintCallable)
     bool CanClickOnNode(const FVector &Dest);
-    UFUNCTION(BlueprintCallable)
-    void AttackEnemy(AActor* actor);
 
     UPROPERTY(BlueprintReadWrite)
     FVector MoveLocation;

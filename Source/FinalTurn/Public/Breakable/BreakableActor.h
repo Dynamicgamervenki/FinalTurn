@@ -21,8 +21,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	virtual FVector InteractPosition() override;
-	virtual TArray<AActor*> GetOverlappingActorsOnNode() override;
+	virtual FVector InteractPosition_Implementation() override;
+	virtual TArray<AActor*> GetOverlappingActorsOnNode_Implementation() override;
+	virtual void Interact_Implementation(AActor* Interactor) override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Breakable")
 	int AmountToGetDestoryed = 1;

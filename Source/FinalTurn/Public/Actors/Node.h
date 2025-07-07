@@ -24,15 +24,17 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
+	
 	
 	UFUNCTION()
 	virtual void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 	UFUNCTION()
 	virtual  void OnBoxEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	virtual FVector InteractPosition() override;
-	virtual TArray<AActor*> GetOverlappingActorsOnNode() override;
+	virtual FVector InteractPosition_Implementation() override;
+	virtual TArray<AActor*> GetOverlappingActorsOnNode_Implementation() override;
+	virtual void Interact_Implementation(AActor* Interactor) override;
+	
 	UPROPERTY(EditAnywhere)
 	bool bDontGoToNode = false;
 public : 
@@ -47,6 +49,11 @@ public :
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void GetCompletedLevel();
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool bStopBeforeUnits;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	float UnitsBeforeStop = 100.0f;
 	
 };
   

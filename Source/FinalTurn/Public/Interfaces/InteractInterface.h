@@ -7,22 +7,22 @@
 #include "InteractInterface.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI)
+UINTERFACE(Blueprintable)
 class UInteractInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class FINALTURN_API IInteractInterface
 {
 	GENERATED_BODY()
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	//virtual void Interact() = 0;
-	virtual FVector InteractPosition() = 0;
-	virtual TArray<AActor*> GetOverlappingActorsOnNode() = 0;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	 FVector InteractPosition();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<AActor*> GetOverlappingActorsOnNode();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void Interact(AActor* Interactor);
 };

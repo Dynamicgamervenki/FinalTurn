@@ -19,12 +19,17 @@ void ABreakableActor::BeginPlay()
 	
 }
 
-FVector ABreakableActor::InteractPosition()
+void ABreakableActor::Interact_Implementation(AActor* Interactor)
+{
+	GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("Interact from Breakable null"));
+}
+
+FVector ABreakableActor::InteractPosition_Implementation()
 {
 	return GetActorLocation();
 }
 
-TArray<AActor*> ABreakableActor::GetOverlappingActorsOnNode()
+TArray<AActor*> ABreakableActor::GetOverlappingActorsOnNode_Implementation()
 {
 	TArray<AActor*> OverlappingActors;
 	return OverlappingActors;
