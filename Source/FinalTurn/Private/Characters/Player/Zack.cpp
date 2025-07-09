@@ -82,18 +82,24 @@ void AZack::OnInteract()
 		PlayInteractionSound(Hit.ImpactPoint);
 		if( Hit.GetActor()->Implements<UInteractInterface>())
 		{
+			double distance = UKismetMathLibrary::Vector_Distance(Hit.Location,GetActorLocation());
 			GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Yellow,FString::Printf(TEXT("HitActor Implements InteractInterface")));
 			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
 		 		switch (EquipState)
 		 		{
 		 		case EEquipState::None:
-				    	IInteractInterface::Execute_Interact(Hit.GetActor(),this);
+		 			if (distance < moveDistance)
+		 				IInteractInterface::Execute_Interact(Hit.GetActor(),this);
 		 			break;
 		 		case EEquipState::Stone:
 		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
 		 			break;
 
 		 		case EEquipState::Grenade:
+		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
+		 			break;
+		 			
+		 		case EEquipState::Dynamite:
 		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
 		 			break;
 		 			
@@ -122,6 +128,7 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 {
 	if (EquipState == InEquipState || !InPickUpClass.IsValid())
 	{
+		GEngine->AddOnScreenDebugMessage(50, 2.0f, FColor::Green, TEXT("EquipState "));
 		if (EquippedItem)
 		{
 			EquippedItem->Destroy();
@@ -133,6 +140,7 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 
 	if (!HasAmmoForEquipState(InEquipState))
 	{
+		GEngine->AddOnScreenDebugMessage(51, 2.0f, FColor::Green, TEXT("HasNoAmmo"));
 		EquipState = EEquipState::None;
 		return;
 	}
@@ -145,6 +153,8 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 			PickupItem->SetActorHiddenInGame(true);
 		}
 	}
+
+	GEngine->AddOnScreenDebugMessage(53, 2.0f, FColor::Green, TEXT("Aync Abt To Start"));
 
 	//  Async load the pickup class
 	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
@@ -165,6 +175,8 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 	case EEquipState::Grenade:
 		SoftThrowableClass = ThrowableGrenadeClass;
 		break;
+	case EEquipState::Dynamite:
+		SoftThrowableClass = ThrowableDynamiteClass;
 	default:
 		break;
 	}
@@ -213,6 +225,8 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 	case EEquipState::Stone:
 		return StoneCount > 0;
 	case EEquipState::Grenade:
+		return GranadeCount > 0;
+	case EEquipState::Dynamite:
 		return GranadeCount > 0;
 	default:
 		return false;
@@ -267,9 +281,8 @@ void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
 	if (NotifyName != "Throw") return;
-
 	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
-
+	
 	switch (EquipState)
 	{
 	case EEquipState::Stone:
@@ -278,6 +291,9 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 	case EEquipState::Grenade:
 		SoftThrowableClass = ThrowableGrenadeClass;
 		break;
+	case EEquipState::Dynamite:
+		SoftThrowableClass = ThrowableDynamiteClass;
+		break;
 	default:
 		return;
 	}
@@ -285,6 +301,7 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 	if (SoftThrowableClass.IsValid())
 	{
 		OnThrowableLoaded(SoftThrowableClass);
+		GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,SoftThrowableClass.ToString());
 	}
 	else
 	{
@@ -326,6 +343,7 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	{
 	case EEquipState::Stone:   StoneCount--; OnPickupUpdated.Broadcast(EPickupType::Stone, StoneCount); break;
 	case EEquipState::Grenade: GranadeCount--; OnPickupUpdated.Broadcast(EPickupType::Granade, GranadeCount); break;
+	case EEquipState::Dynamite: GranadeCount--; OnPickupUpdated.Broadcast(EPickupType::Granade, GranadeCount); break;
 	default: break;
 	}
 
@@ -413,10 +431,6 @@ void AZack::PrintOutData()
 			-3, 2.0f, FColor::Yellow,
 			FString::Printf(TEXT("EquipState (int): %d"), static_cast<int32>(EquipState))
 		);
-
-		GEngine->AddOnScreenDebugMessage(11, 2.0f, FColor::Green, TEXT("Press E to Equip Gun"));
-		GEngine->AddOnScreenDebugMessage(12, 2.0f, FColor::Green, TEXT("Press F to Equip Stone"));
-
 	}
 }
 

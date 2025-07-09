@@ -18,6 +18,7 @@ enum class EEquipState : uint8
     None     UMETA(DisplayName = "None"),
     Stone    UMETA(DisplayName = "Stone"),
     Grenade  UMETA(DisplayName = "Grenade"),
+    Dynamite UMETA(DisplayName = "Dynamite"),
     Gun      UMETA(DisplayName = "Gun")
 };
 
@@ -130,6 +131,9 @@ protected:
 
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<AThrowableItem> ThrowableGrenadeClass;
+
+    UPROPERTY(EditAnywhere)
+    TSoftClassPtr<AThrowableItem> ThrowableDynamiteClass;
     
     UPROPERTY(EditAnywhere) UClass* PickUpClass;
    // UPROPERTY(EditAnywhere) UClass* BulletClass;
