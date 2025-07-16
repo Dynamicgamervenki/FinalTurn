@@ -3,7 +3,7 @@
 **Final Turn** is a tense, turn-based top-down puzzle-stealth adventure game built in **Unreal Engine 5.4** for Android.
 
 ## 📱 Platform
-- Android (Published on Google Play)
+- Android (Will be Published on Google Play Soon , Currently in ClosedTesting)
 
 ## 🎮 Gameplay
 - Navigate using node-based movement.
@@ -15,7 +15,7 @@
 
 - https://github.com/user-attachments/assets/46e59159-d0ab-48c0-a966-7c4a139419ba
 
-- https://github.com/user-attachments/assets/29a6b886-71f4-47f3-85be-2a3fe815bfb7
+- https://github.com/user-attachments/assets/4c2ad2e6-b243-4ef4-a519-8788e955be20
 
 ## ✨ Features
 - Turn-based node movement
