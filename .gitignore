@@ -43,9 +43,6 @@ Saved/
 Content/MegaMagicVFXBundle/
 Content/Fab
 
-# Ignore World Partition “external actors” packages
-Content/_ExternalActors_*/
-
 # System files
 .DS_Store
 Thumbs.db
