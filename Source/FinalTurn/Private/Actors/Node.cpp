@@ -2,11 +2,9 @@
 
 
 #include "Actors/Node.h"
-#include "Save/PlayerSave.h"
 #include "Characters/Player/Zack.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
-
 
 ANode::ANode()
 {
@@ -71,7 +69,6 @@ TArray<AActor*> ANode::GetOverlappingActorsOnNode_Implementation()
 void ANode::Interact_Implementation(AActor* Interactor)
 {
 	GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("node interaction null"));
-	//do nothing
 	FVector MoveToLocation;
 	AZack* Zack = Cast<AZack>(Interactor);
 	if (Zack)

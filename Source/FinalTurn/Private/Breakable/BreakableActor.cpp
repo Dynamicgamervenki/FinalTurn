@@ -6,11 +6,10 @@
 
 ABreakableActor::ABreakableActor()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	GeometryCollection = CreateDefaultSubobject<UGeometryCollectionComponent>("GeometryCollection");
 	SetRootComponent(GeometryCollection);
 	GeometryCollection->SetGenerateOverlapEvents(true);
-	
 } 
 
 void ABreakableActor::BeginPlay()
@@ -22,11 +21,15 @@ void ABreakableActor::BeginPlay()
 void ABreakableActor::Interact_Implementation(AActor* Interactor)
 {
 	GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("Interact from Breakable null"));
+	
 }
 
 FVector ABreakableActor::InteractPosition_Implementation()
 {
-	return GetActorLocation();
+	if (!bPlaceHeavyDynamiteOnClick)
+		return GetActorLocation();
+
+	return FVector(0, 0, 0);
 }
 
 TArray<AActor*> ABreakableActor::GetOverlappingActorsOnNode_Implementation()
@@ -38,6 +41,5 @@ TArray<AActor*> ABreakableActor::GetOverlappingActorsOnNode_Implementation()
 void ABreakableActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 

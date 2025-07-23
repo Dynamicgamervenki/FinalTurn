@@ -39,6 +39,9 @@ public:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+    UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Components")
+    UPawnNoiseEmitterComponent* PawnNoiseEmitter;
+
     // --- Pickup Interface ---
     virtual void OnPickedUp(EPickupType PickupType, int32 Amount) override;
     virtual ACharacter* GetZackReference_Implementation() override;
@@ -65,10 +68,17 @@ public:
     // --- Inline Setters for Pickup Items ---
     FORCEINLINE void SetPickupItem(APickup* Pickup)      { PickupItem = Pickup; }
     FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped; }
+    
+    void DoMoveTo(const FVector& Dest,float Offset = 20);
+    
+    // --- Internal State ---
+    EEquipState EquipState = EEquipState::None;
+    void DoThrowEquipItem(const FVector& Dest,AActor* HitActor);
 
-    // --- Blueprint Event for Shooting ---
-    //UFUNCTION(BlueprintImplementableEvent)
-    void DoMoveTo(const FVector& Dest);
+    void PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor);
+
+    UFUNCTION(BlueprintCallable)
+    void ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation);
 
 protected:
     // --- Input Handling ---
@@ -77,7 +87,6 @@ protected:
     UFUNCTION(BlueprintCallable) void EquipPickUp(TSoftClassPtr<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
 
     // --- Movement & Actions ---
-    void DoThrowEquipItem(const FVector& Dest,AActor* HitActor);
     void DoShootAt(const FVector& Dest);
 
     // --- Animation Notifications ---
@@ -86,8 +95,6 @@ protected:
     // --- Debug/Utility ---
     void PrintOutData();
 
-    // --- Internal State ---
-    EEquipState EquipState = EEquipState::None;
 
     // --- Movement Data ---
     UPROPERTY(BlueprintReadWrite, Category = "Move")
@@ -104,13 +111,7 @@ protected:
     TObjectPtr<UInputMappingContext> IMC_FinalTurn;
     UPROPERTY(EditAnywhere, Category = "Input")
     TObjectPtr<UInputAction> IA_Move;
-    UPROPERTY(EditAnywhere, Category = "Input")
-    TObjectPtr<UInputAction> IA_EquipWeapon;
-    UPROPERTY(EditAnywhere, Category = "Input")
-    TObjectPtr<UInputAction> IA_EquipStone;
-    UPROPERTY(EditAnywhere, Category = "Input")
-    TObjectPtr<UInputAction> IA_EquipGranade;
-
+    
     // --- Pickup Items ---
     UPROPERTY(VisibleAnywhere, Category = "Combat")
     APickup* PickupItem;
@@ -177,11 +178,7 @@ private:
     virtual void OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted);
     UFUNCTION()
     void PlayAnimMontageInReverse(UAnimMontage* MontageToPlay);
-
-    UPROPERTY(VisibleAnywhere)
-    TArray<AActor*> OverlappingActorsOnNode;
-    UPROPERTY(VisibleAnywhere)
-    FVector TargetEnemyLocation = FVector::ZeroVector;
-
+    UFUNCTION()
+    void HandleThrowableImpact(AActor* HitActor);
 
 };

@@ -17,6 +17,7 @@ class FINALTURN_API ABreakableActor : public AActor , public IInteractInterface
 public:	
 	ABreakableActor();
 	virtual void Tick(float DeltaTime) override;
+	
 
 protected:
 	virtual void BeginPlay() override;
@@ -30,8 +31,14 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category="Breakable")
 	int ThrownCount;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category=Default)
+	bool bPlaceHeavyDynamiteOnClick;
+	
 private:
 	UPROPERTY(VisibleAnywhere)
 	UGeometryCollectionComponent* GeometryCollection;
+
+public:
+	FORCEINLINE bool ShouldPlaceHeavyDynamiteOnClick() const{ return bPlaceHeavyDynamiteOnClick; }
 
 };

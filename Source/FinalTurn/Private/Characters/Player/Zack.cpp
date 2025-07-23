@@ -2,7 +2,6 @@
 
 
 #include "Characters/Player/Zack.h"
-
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
@@ -16,11 +15,14 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Pickups/Stone.h"
 #include "Pickups/ThrowableItem.h"
+#include "Components/PawnNoiseEmitterComponent.h"
 
 AZack::AZack()
 {
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	moveDistance = 500.0f;
+
+	PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawm Noise Emitter"));
 }
 
 
@@ -38,8 +40,8 @@ void AZack::BeginPlay()
 		}
 
 		PlayerController->bShowMouseCursor = true;
-		PlayerController->bEnableClickEvents     = true;
 		PlayerController->bEnableMouseOverEvents = true;
+		PlayerController->bEnableClickEvents     = true;
 
 		// Mix game input (camera, movement) with UI/clicks
 		FInputModeGameAndUI InputMode;
@@ -61,8 +63,6 @@ void AZack::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 			EnhancedInputComponent->BindAction(IA_Move,ETriggerEvent::Started,this,&AZack::OnInteract);
-			//EnhancedInputComponent->BindAction(IA_EquipWeapon,ETriggerEvent::Started,this,&AZack::EquipWeapon);
-		    //EnhancedInputComponent->BindAction(IA_EquipStone,ETriggerEvent::Started,this,&AZack::EquipPickUp);
 	}
 }
 
@@ -82,31 +82,9 @@ void AZack::OnInteract()
 		PlayInteractionSound(Hit.ImpactPoint);
 		if( Hit.GetActor()->Implements<UInteractInterface>())
 		{
-			double distance = UKismetMathLibrary::Vector_Distance(Hit.Location,GetActorLocation());
 			GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Yellow,FString::Printf(TEXT("HitActor Implements InteractInterface")));
 			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
-		 		switch (EquipState)
-		 		{
-		 		case EEquipState::None:
-		 			if (distance < moveDistance)
-		 				IInteractInterface::Execute_Interact(Hit.GetActor(),this);
-		 			break;
-		 		case EEquipState::Stone:
-		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
-		 			break;
-
-		 		case EEquipState::Grenade:
-		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
-		 			break;
-		 			
-		 		case EEquipState::Dynamite:
-		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
-		 			break;
-		 			
-		 		case EEquipState::Gun:
-		 			DoShootAt(MoveLocation);
-		 				break;
-		 		}
+			PerformEquipStateAction(EquipState,MoveLocation,Hit.GetActor());
 		}
 	}
 }
@@ -233,15 +211,15 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 	}
 }
 
-void AZack::DoMoveTo(const FVector& Dest)
+void AZack::DoMoveTo(const FVector& Dest,float OffsetValue)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f /*&& OverlappingActorsOnNode.IsEmpty()*/) 
+	if (distance <= moveDistance && distance > 100.0f) 
 	{
 		GEngine->AddOnScreenDebugMessage(122, 2.0f, FColor::Black, FString::Printf(TEXT("Distance: %.2f"), distance));
 
 		FVector Direction = (Dest - GetActorLocation()).GetSafeNormal();
-		FVector OffSet = Dest + Direction * 20.0f;
+		FVector OffSet = Dest + Direction * OffsetValue;
 		
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), OffSet);
 		IsMoving = true;
@@ -275,6 +253,33 @@ void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
 	FRotator LookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Dest);
 	SetActorRotation(LookRotator);
 	PlayAnimMontages(ThrowMontage);
+}
+
+void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor)
+{
+	switch (State)
+	{
+	case EEquipState::None:
+		IInteractInterface::Execute_Interact(HitActor,this);
+		break;
+	case EEquipState::Stone:
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::Grenade:
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::Dynamite:
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::Gun:
+		DoShootAt(InteractLocation);
+		break;
+	}
+}
+
+void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
+{
+	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
 }
 
 
@@ -338,6 +343,9 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	SpawnedItem->SM_Throwable->SetMassOverrideInKg(NAME_None, 1.0f, true);
 	SpawnedItem->SM_Throwable->AddImpulse(FinalImpulse);
 
+	SpawnedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
+		
+	
 	// Deduct ammo
 	switch (EquipState)
 	{
@@ -372,6 +380,16 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 		DoMoveTo(Dest);
 	}
  }
+
+void AZack::HandleThrowableImpact(AActor* HitActor)
+{
+	if (!HitActor) return;
+	
+	GEngine->AddOnScreenDebugMessage(55, 10, FColor::Red, 
+		FString::Printf(TEXT("Throwable Impact on Actor: %s"), *HitActor->GetName()));
+	FVector Location = HitActor->GetActorLocation();
+	ReportNoise(HitActor, 1.0f, Location);
+}
 
 
 void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
