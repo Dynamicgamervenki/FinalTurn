@@ -219,7 +219,7 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f || IgnoreDistance && distance > 50.0f) 
+	if (distance <= moveDistance && distance > 100.0f || IgnoreDistance && distance > 50.0f || IsHiding && distance < 1000.0f) 
 	{
 		GEngine->AddOnScreenDebugMessage(122, 2.0f, FColor::Black, FString::Printf(TEXT("Distance: %.2f"), distance));
 
