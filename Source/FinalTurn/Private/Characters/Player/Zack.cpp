@@ -86,6 +86,11 @@ void AZack::OnInteract()
 			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
 			PerformEquipStateAction(EquipState,MoveLocation,Hit.GetActor());
 		}
+		else
+		{
+			MoveLocation = Hit.GetActor()->GetActorLocation();
+			DoMoveTo(MoveLocation);
+		}
 	}
 }
 
@@ -211,10 +216,10 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 	}
 }
 
-void AZack::DoMoveTo(const FVector& Dest,float OffsetValue)
+void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f) 
+	if (distance <= moveDistance && distance > 100.0f || IgnoreDistance && distance > 50.0f) 
 	{
 		GEngine->AddOnScreenDebugMessage(122, 2.0f, FColor::Black, FString::Printf(TEXT("Distance: %.2f"), distance));
 
@@ -280,6 +285,11 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
 {
 	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
+}
+
+void AZack::PlayHideMontage()
+{
+	PlayAnimMontages(HideMontage);
 }
 
 
@@ -414,14 +424,19 @@ void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
 	OnPickupUpdated.Broadcast(PickupType,NewAmount);
 }
 
-ACharacter* AZack::GetZackReference_Implementation()
-{
-	return this;
-}
-
 void AZack::SetDetectedByEnemy_Implementation(bool bDetected)
 {
 	GotDetectedByEnemy = bDetected;
+}
+
+void AZack::SetIsHiding_Implementation(bool isHiding)
+{
+	IsHiding = isHiding;
+}
+
+bool AZack::GetIsHiding_Implementation()
+{
+	return IsHiding;
 }
 
 void AZack::SetCanClickOnNode_Implementation(bool click)

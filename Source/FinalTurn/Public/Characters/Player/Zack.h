@@ -44,15 +44,19 @@ public:
 
     // --- Pickup Interface ---
     virtual void OnPickedUp(EPickupType PickupType, int32 Amount) override;
-    virtual ACharacter* GetZackReference_Implementation() override;
     virtual void SetDetectedByEnemy_Implementation(bool bDetected) override;
+    virtual void SetIsHiding_Implementation(bool isHiding) override;
     
     /** Is character currently moving? */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
     bool IsMoving = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
+    bool IsHiding = false;
+    virtual bool GetIsHiding_Implementation() override; 
+
     /** Can click nodes? */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
     bool CanClickNode = true;
     virtual void SetCanClickOnNode_Implementation(bool click) override;
     
@@ -69,7 +73,7 @@ public:
     FORCEINLINE void SetPickupItem(APickup* Pickup)      { PickupItem = Pickup; }
     FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped; }
     
-    void DoMoveTo(const FVector& Dest,float Offset = 20);
+    void DoMoveTo(const FVector& Dest,float Offset = 20,bool IgnoreDistance = false);
     
     // --- Internal State ---
     EEquipState EquipState = EEquipState::None;
@@ -79,6 +83,9 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation);
+
+    UFUNCTION()
+    void PlayHideMontage();
 
 protected:
     // --- Input Handling ---
@@ -125,8 +132,7 @@ protected:
     int32 GranadeCount;
 
     // --- Projectile Classes ---
-  //  UPROPERTY(EditAnywhere) UClass* ThrowableStoneClass;
-    //UPROPERTY(EditAnywhere) UClass* ThrowableGrenadeClass;
+    
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<AThrowableItem> ThrowableStoneClass;
 
@@ -137,7 +143,6 @@ protected:
     TSoftClassPtr<AThrowableItem> ThrowableDynamiteClass;
     
     UPROPERTY(EditAnywhere) UClass* PickUpClass;
-   // UPROPERTY(EditAnywhere) UClass* BulletClass;
 
     // --- Animation Montages ---
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
@@ -148,6 +153,8 @@ protected:
     UAnimMontage* EquipStoneMontage;
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* StealthMontage;
+    UPROPERTY(EditDefaultsOnly, Category = "Montages")
+    UAnimMontage* HideMontage;
 
     UFUNCTION(BlueprintCallable)
     bool CanClickOnNode(const FVector &Dest);
@@ -170,6 +177,7 @@ protected:
     UPROPERTY()
     TArray<AThrowableItem*> Throwables;
 
+
     
 private:
     UFUNCTION()
@@ -180,5 +188,5 @@ private:
     void PlayAnimMontageInReverse(UAnimMontage* MontageToPlay);
     UFUNCTION()
     void HandleThrowableImpact(AActor* HitActor);
-
+    
 };

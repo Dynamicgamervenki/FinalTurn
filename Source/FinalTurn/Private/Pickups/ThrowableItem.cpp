@@ -10,7 +10,7 @@
 AThrowableItem::AThrowableItem()
 {
  
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	SM_Throwable = CreateDefaultSubobject<UStaticMeshComponent>("SM_Stone");
 	SM_Throwable->SetCanEverAffectNavigation(false);
 	SM_Throwable->SetSimulatePhysics(true);

@@ -22,11 +22,13 @@ class FINALTURN_API IPickupInterface
 public:
 	virtual void OnPickedUp(EPickupType PickupType, int32 Amount) = 0;
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	ACharacter* GetZackReference();
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetCanClickOnNode(bool click);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetDetectedByEnemy(bool bDetected);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool GetIsHiding();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetIsHiding(bool isHiding);
 	
 	TArray<APickup*> Pickups;
 

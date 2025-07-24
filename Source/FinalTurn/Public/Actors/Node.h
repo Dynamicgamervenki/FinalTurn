@@ -28,8 +28,8 @@ protected:
 	
 	UFUNCTION()
 	virtual void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-	UFUNCTION()
-	virtual  void OnBoxEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	// UFUNCTION()
+	// virtual  void OnBoxEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	virtual FVector InteractPosition_Implementation() override;
 	virtual TArray<AActor*> GetOverlappingActorsOnNode_Implementation() override;
@@ -54,6 +54,12 @@ public :
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	float UnitsBeforeStop = 100.0f;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool HiddenNode = false;
+	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	AActor* HidingLocationActor;
 	
 };
   
