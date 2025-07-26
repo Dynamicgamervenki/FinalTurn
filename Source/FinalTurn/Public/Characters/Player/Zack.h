@@ -19,6 +19,7 @@ enum class EEquipState : uint8
     Stone    UMETA(DisplayName = "Stone"),
     Grenade  UMETA(DisplayName = "Grenade"),
     Dynamite UMETA(DisplayName = "Dynamite"),
+    HeavyDynamite UMETA(DisplayName = "HeavyDynamite"),
     Gun      UMETA(DisplayName = "Gun")
 };
 
@@ -84,8 +85,17 @@ public:
     UFUNCTION(BlueprintCallable)
     void ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation);
 
-    UFUNCTION()
-    void PlayHideMontage();
+    UFUNCTION(BlueprintCallable)
+    void AmmoUpdateBroadCast(EPickupType type,int Ammo);
+    
+    UFUNCTION(BlueprintImplementableEvent)
+    void PlayPlacignHeavyDynamiteMontage();
+
+    UPROPERTY(BlueprintReadWrite, Category = "Move")
+    FVector HeavyDynamiteSpawnLocation;
+    
+    UPROPERTY(BlueprintReadWrite, Category = "Breakable")
+    AActor* BreakableActor;
 
 protected:
     // --- Input Handling ---
@@ -106,6 +116,10 @@ protected:
     // --- Movement Data ---
     UPROPERTY(BlueprintReadWrite, Category = "Move")
     FVector TargetLocation;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Move")
+    FVector PreviousNodeLocation;
+    
     
     UPROPERTY(EditAnywhere, Category = "Move")
     double moveDistance;
@@ -130,6 +144,10 @@ protected:
     int32 StoneCount;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 GranadeCount;
+    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
+    int32 DynamiteCount;
+    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
+    int32 HeavyDynamiteCount;
 
     // --- Projectile Classes ---
     
@@ -141,6 +159,9 @@ protected:
 
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<AThrowableItem> ThrowableDynamiteClass;
+    
+    UPROPERTY(EditAnywhere)
+    TSoftClassPtr<AThrowableItem> ThrowableHeavyDynamiteClass;
     
     UPROPERTY(EditAnywhere) UClass* PickUpClass;
 
@@ -154,7 +175,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* StealthMontage;
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
-    UAnimMontage* HideMontage;
+    UAnimMontage* PlaceHeavyDynamiteMontage;
 
     UFUNCTION(BlueprintCallable)
     bool CanClickOnNode(const FVector &Dest);
