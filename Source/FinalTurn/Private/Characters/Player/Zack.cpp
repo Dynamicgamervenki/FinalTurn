@@ -16,6 +16,7 @@
 #include "Pickups/Stone.h"
 #include "Pickups/ThrowableItem.h"
 #include "Components/PawnNoiseEmitterComponent.h"
+#include "DataAssets/PickupVariantAsset.h"
 
 AZack::AZack()
 {
@@ -76,7 +77,7 @@ void AZack::OnInteract()
 {
 	FHitResult Hit;
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	PlayerController->GetHitResultUnderCursorForObjects(ObjectTypes,true,Hit);
+	PlayerController->GetHitResultUnderCursorForObjects(InteractableObjectTypes,true,Hit);
 	if (Hit.bBlockingHit && CanClickNode)
 	{
 		PlayInteractionSound(Hit.ImpactPoint);
@@ -110,42 +111,43 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 	case EEquipState::Dynamite:
 		DoThrowEquipItem(InteractLocation,HitActor);
 		break;
-	case EEquipState::HeavyDynamite:       // need to change logic for heavy dynamite
-		//DoMoveTo(HitActor->GetActorLocation(),20,true);
-		//DoThrowEquipItem(InteractLocation,HitActor);
+	case EEquipState::HeavyDynamite: 
 		IInteractInterface::Execute_Interact(HitActor,this);
 		break;
-	case EEquipState::Gun:
-		DoShootAt(InteractLocation);
-		break;
 	}
 }
 
-
-void AZack::EquipWeapon()
+void AZack::Equip(EPickupType Pickup)
 {
-	if (PickupItem != nullptr && EquipState != EEquipState::Gun)
+	UPickupVariantAsset* VariantAsset = PickupVariantMap.FindRef(Pickup);
+	if (!VariantAsset || !VariantAsset->PickupData.PickupClass.IsValid())
 	{
-		PickupItem->SetActorHiddenInGame(false);
-		PlayAnimMontages(DrawGunMontage);
-		EquipState = EEquipState::Gun;
-		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
-		PickupItem->AttachToComponent(GetMesh(), TransformRules,"GunE_Socket");
-		IsGunAiming = true;
+		GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("Invalid Variant Asset or PickupClass"));
+		return;
 	}
+
+	FPickupVariantData Data = VariantAsset->PickupData;
+	EquipPickUp(Data);
 }
 
-void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, EEquipState InEquipState)
+void AZack::EquipPickUp(FPickupVariantData PickupData)
 {
+	TSoftClassPtr<APickup> InPickUpClass = PickupData.PickupClass;
+	FName SocketName = PickupData.SocketName;
+	EEquipState InEquipState = PickupData.EquipState;
+	TSoftClassPtr<AThrowableItem> SoftThrowableClass = PickupData.ThrowableClass;
+
 	if (EquipState == InEquipState || !InPickUpClass.IsValid())
 	{
 		GEngine->AddOnScreenDebugMessage(50, 2.0f, FColor::Green, TEXT("EquipState "));
+		EquipState = EEquipState::None;
+			
 		if (EquippedItem)
 		{
 			EquippedItem->Destroy();
 			EquippedItem = nullptr;
 		}
-		EquipState = EEquipState::None;
+	
 		return;
 	}
 
@@ -156,18 +158,8 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 		return;
 	}
 
-	if (EquipState == EEquipState::Gun)
-	{
-		PlayAnimMontageInReverse(DrawGunMontage);
-		if (PickupItem)
-		{
-			PickupItem->SetActorHiddenInGame(true);
-		}
-	}
-
 	GEngine->AddOnScreenDebugMessage(53, 2.0f, FColor::Green, TEXT("Aync Abt To Start"));
-
-	//  Async load the pickup class
+	
 	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
 	Streamable.RequestAsyncLoad(
 		InPickUpClass.ToSoftObjectPath(),
@@ -175,27 +167,7 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 			this, &AZack::OnPickupClassLoaded, InPickUpClass, SocketName, InEquipState
 		)
 	);
-
-	//  Preload the corresponding throwable class too
-	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
-	switch (InEquipState)
-	{
-	case EEquipState::Stone:
-		SoftThrowableClass = ThrowableStoneClass;
-		break;
-	case EEquipState::Grenade:
-		SoftThrowableClass = ThrowableGrenadeClass;
-		break;
-	case EEquipState::Dynamite:
-		SoftThrowableClass = ThrowableDynamiteClass;
-		break;
-	case EEquipState::HeavyDynamite:
-		SoftThrowableClass = ThrowableHeavyDynamiteClass;
-		break;
-	default:
-		break;
-	}
-
+	
 	if (!SoftThrowableClass.IsValid())
 	{
 		Streamable.RequestAsyncLoad(
@@ -209,13 +181,11 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 	}
 }
 
-
 void AZack::OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState)
 {
 	if (!LoadedClass.IsValid()) return;
 
 	UClass* ActualClass = LoadedClass.Get();
-
 	FVector SocketLocation = GetMesh()->GetSocketLocation(SocketName);
 	FRotator SocketRotation = GetMesh()->GetSocketRotation(SocketName);
 
@@ -234,7 +204,7 @@ void AZack::OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName Socket
 
 
 bool AZack::HasAmmoForEquipState(EEquipState State)
-{
+{ 
 	switch (State)
 	{
 	case EEquipState::Stone:
@@ -373,7 +343,6 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	SpawnedItem->SM_Throwable->AddImpulse(FinalImpulse);
 
 	SpawnedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
-		
 	
 	// Deduct ammo
 	switch (EquipState)
@@ -382,34 +351,14 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	case EEquipState::Grenade: GranadeCount--; OnPickupUpdated.Broadcast(EPickupType::Granade, GranadeCount); break;
 	case EEquipState::Dynamite: DynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::Dynamite, DynamiteCount); break;
 	case EEquipState::HeavyDynamite: HeavyDynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::HeavyDynamite, HeavyDynamiteCount); break;
+	case EEquipState::LavaCrystal: LavaCrystalCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaCrystalCount); break;
+	case EEquipState::LavaOrb : LavaOrbCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaOrbCount); break;
 	default: break;
 	}
 
 	CanClickNode = true;
 	EquipState = EEquipState::None;
 }
-
- void AZack::DoShootAt(const FVector& Dest)
- {
-	FVector Direction = (Dest - GetActorLocation()).GetSafeNormal();
-	FRotator LookRotator = Direction.Rotation();
-	
- 	SetActorRotation(LookRotator);
-	if (BulletCount > 0 && EquipState == EEquipState::Gun && CanClickOnNode(Dest))
-	{
- 		GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,"Shooting");
-		FVector SocketLocation = GetMesh()->GetSocketLocation("socket_BulletSpawn");
-		//AActor* Bullet = GetWorld()->SpawnActor<AActor>(BulletClass,SocketLocation,LookRotator);
-		BulletCount--;
-	}
-	else
-	{
-		IsGunAiming = false;
-		GEngine->AddOnScreenDebugMessage(234,2.0f,FColor::Red,"No Bullets Left");
-		EquipState = EEquipState::None;
-		DoMoveTo(Dest);
-	}
- }
 
 void AZack::HandleThrowableImpact(AActor* HitActor)
 {
@@ -428,10 +377,6 @@ void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
 	
 	switch (PickupType)
 	{
-	case EPickupType::Bullet:
-		BulletCount += Amount;
-		NewAmount = BulletCount;
-		break;
 	case EPickupType::Stone:
 		StoneCount += Amount;
 		NewAmount = StoneCount;
@@ -447,6 +392,14 @@ void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
 	case EPickupType::HeavyDynamite:
 		HeavyDynamiteCount += Amount;
 		NewAmount = HeavyDynamiteCount;
+		break;
+	case EPickupType::LavaCrystal:
+		LavaCrystalCount += Amount;
+		NewAmount = LavaCrystalCount;
+		break;
+	case EPickupType::LavaOrb:
+		LavaOrbCount += Amount;
+		NewAmount = LavaOrbCount;
 		break;
 	};
 	OnPickupUpdated.Broadcast(PickupType,NewAmount);
@@ -478,9 +431,6 @@ void AZack::PrintOutData()
 	{
 		GEngine->AddOnScreenDebugMessage(8, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("Stones: %d"), StoneCount));
-            
-		GEngine->AddOnScreenDebugMessage(9, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Bullets: %d"), BulletCount));
             
 		GEngine->AddOnScreenDebugMessage(10, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("Grenades: %d"), GranadeCount));

@@ -5,6 +5,8 @@
 #include "Interfaces/PickupInterface.h"
 #include "Zack.generated.h"
 
+struct FPickupVariantData;
+class UPickupVariantAsset;
 struct FInputActionValue;
 class UInputMappingContext;
 class UInputAction;
@@ -12,16 +14,6 @@ class APickup;
 class UAnimMontage;
 class AThrowableItem;
 
-UENUM(BlueprintType)
-enum class EEquipState : uint8
-{
-    None     UMETA(DisplayName = "None"),
-    Stone    UMETA(DisplayName = "Stone"),
-    Grenade  UMETA(DisplayName = "Grenade"),
-    Dynamite UMETA(DisplayName = "Dynamite"),
-    HeavyDynamite UMETA(DisplayName = "HeavyDynamite"),
-    Gun      UMETA(DisplayName = "Gun")
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPickupUpdated, EPickupType, PickupType, int32, NewAmount);
 
@@ -39,7 +31,7 @@ public:
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
-
+    
     UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Components")
     UPawnNoiseEmitterComponent* PawnNoiseEmitter;
 
@@ -67,13 +59,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Life")
     bool GotDetectedByEnemy = false;
     
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-    bool IsGunAiming = false;
-    
     // --- Inline Setters for Pickup Items ---
-    FORCEINLINE void SetPickupItem(APickup* Pickup)      { PickupItem = Pickup; }
     FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped; }
-    
+
+    UFUNCTION()
     void DoMoveTo(const FVector& Dest,float Offset = 20,bool IgnoreDistance = false);
     
     // --- Internal State ---
@@ -100,32 +89,22 @@ public:
 protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
-    UFUNCTION(BlueprintCallable) void EquipWeapon();
-    UFUNCTION(BlueprintCallable) void EquipPickUp(TSoftClassPtr<APickup> InPickUpClass,FName SocketName,EEquipState InEquipState);
-
-    // --- Movement & Actions ---
-    void DoShootAt(const FVector& Dest);
-
-    // --- Animation Notifications ---
-    UFUNCTION() void HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
-
+    UFUNCTION(BlueprintCallable) void Equip(EPickupType Pickup);
+    UFUNCTION() void EquipPickUp(FPickupVariantData PickupData);
+    
     // --- Debug/Utility ---
+    UFUNCTION()
     void PrintOutData();
-
-
+    
     // --- Movement Data ---
     UPROPERTY(BlueprintReadWrite, Category = "Move")
     FVector TargetLocation;
-
     UPROPERTY(BlueprintReadWrite, Category = "Move")
     FVector PreviousNodeLocation;
-    
-    
     UPROPERTY(EditAnywhere, Category = "Move")
     double moveDistance;
-
     UPROPERTY(EditAnywhere, Category = "Move")
-    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    TArray<TEnumAsByte<EObjectTypeQuery>> InteractableObjectTypes;
 
     // --- Input Bindings ---
     UPROPERTY(EditAnywhere, Category = "Input")
@@ -139,8 +118,6 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "Combat")
     APickup* EquippedItem;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
-    int32 BulletCount;
-    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 StoneCount;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 GranadeCount;
@@ -148,9 +125,12 @@ protected:
     int32 DynamiteCount;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 HeavyDynamiteCount;
+    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
+    int32 LavaCrystalCount;
+    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
+    int32 LavaOrbCount;
 
     // --- Projectile Classes ---
-    
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<AThrowableItem> ThrowableStoneClass;
 
@@ -163,13 +143,9 @@ protected:
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<AThrowableItem> ThrowableHeavyDynamiteClass;
     
-    UPROPERTY(EditAnywhere) UClass* PickUpClass;
-
     // --- Animation Montages ---
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* ThrowMontage;
-    UPROPERTY(EditDefaultsOnly, Category = "Montages")
-    UAnimMontage* DrawGunMontage;
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* EquipStoneMontage;
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
@@ -185,21 +161,10 @@ protected:
     
     UFUNCTION(BlueprintImplementableEvent)
     void PlayInteractionSound(FVector Location);
-
-    UFUNCTION()
-    bool HasAmmoForEquipState(EEquipState State);
-
-    UFUNCTION()
-    void OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState);
-
-    UFUNCTION()
-    void OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass);
-
-    UPROPERTY()
-    TArray<AThrowableItem*> Throwables;
-
-
     
+    UPROPERTY(EditAnywhere, Category="Pickup Variants")
+    TMap<EPickupType, UPickupVariantAsset*> PickupVariantMap;
+
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);
@@ -209,5 +174,13 @@ private:
     void PlayAnimMontageInReverse(UAnimMontage* MontageToPlay);
     UFUNCTION()
     void HandleThrowableImpact(AActor* HitActor);
+    UFUNCTION()
+    void HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& Payload);
+    UFUNCTION()
+    bool HasAmmoForEquipState(EEquipState State);
+    UFUNCTION()
+    void OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState);
+    UFUNCTION()
+    void OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass);
     
 };

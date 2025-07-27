@@ -4,12 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "Characters/Player/Zack.h"
+#include "Pickups/PickupType.h"
 #include "PickupVariantAsset.generated.h"
 
 class APickup;
 class AThrowableItem;
-class PickupType;
 
 USTRUCT(BlueprintType)
 struct FPickupVariantData
@@ -17,10 +16,10 @@ struct FPickupVariantData
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	EPickupType PickupType; // Stone or Grenade or Bullet
+	EPickupType PickupType; 
 
 	UPROPERTY(EditAnywhere)
-	EEquipState EquipState; // Helps decide equip/throw logic
+	EEquipState EquipState; 
 
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<APickup> PickupClass;
@@ -29,7 +28,7 @@ struct FPickupVariantData
 	TSoftClassPtr<AThrowableItem> ThrowableClass;
 
 	UPROPERTY(EditAnywhere)
-	FName SocketName; // Optional, override default socket if needed
+	FName SocketName; 
 };
 UCLASS()
 class FINALTURN_API UPickupVariantAsset : public UDataAsset
