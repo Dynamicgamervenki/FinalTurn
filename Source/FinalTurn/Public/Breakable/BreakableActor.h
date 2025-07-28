@@ -7,6 +7,7 @@
 #include "Interfaces/InteractInterface.h"
 #include "BreakableActor.generated.h"
 
+enum class EPickupType : uint8;
 class USphereComponent;
 class UGeometryCollectionComponent;
 
@@ -52,5 +53,7 @@ public:
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	float UnitsBeforeStop = 100.0f;
-
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	EPickupType DestoroyablePickup;
+	
 };

@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "ThrowableItem.generated.h"
 
+enum class EPickupType : uint8;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThrowableImpact, AActor*, HitActor);
 
 class USphereComponent;
@@ -26,7 +27,9 @@ public:
 	UStaticMeshComponent* SM_Throwable;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USphereComponent* Sphere;
-
+	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	EPickupType ThrowableType;
 	UPROPERTY(BlueprintAssignable)
 	FOnThrowableImpact OnThrowableImpact;
 
