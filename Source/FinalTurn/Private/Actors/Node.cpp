@@ -2,11 +2,9 @@
 
 
 #include "Actors/Node.h"
-#include "Save/PlayerSave.h"
 #include "Characters/Player/Zack.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
-
 
 ANode::ANode()
 {
@@ -19,15 +17,14 @@ ANode::ANode()
 	Box = CreateDefaultSubobject<UBoxComponent>("BoxComponent");
 	Box->SetupAttachment(GetRootComponent());
 	Box->OnComponentBeginOverlap.AddDynamic(this,&ANode::OnBoxOverlap);
-	Box->OnComponentEndOverlap.AddDynamic(this,&ANode::OnBoxEndOverlap);
+//	Box->OnComponentEndOverlap.AddDynamic(this,&ANode::OnBoxEndOverlap);
 }
 
 
 void ANode::BeginPlay()
 {
 	Super::BeginPlay();
-
-
+	
 }
 
 void ANode::Tick(float DeltaTime)
@@ -45,25 +42,59 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 			UGameplayStatics::OpenLevel(this,LevelName);
 			GetCompletedLevel();
 		}
+		// else if (HiddenNode)
+		// {
+		// 	GEngine->AddOnScreenDebugMessage(112, 5.f, FColor::Yellow, TEXT("Hidden Node"));
+		// 	Zack->DoMoveTo(HidingLocation);
+		// }
+		GEngine->AddOnScreenDebugMessage(-12, 2.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
 		Zack->IsMoving = false;
 		Zack->CanClickNode = true;
 	}
 }
 
-void ANode::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	
-}
+// void ANode::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+// 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+// {
+// 	
+// }
 
-FVector ANode::InteractPosition()
+FVector ANode::InteractPosition_Implementation()
 {
 	return Box->GetComponentLocation();
 }
 
-TArray<AActor*> ANode::GetOverlappingActorsOnNode()
+TArray<AActor*> ANode::GetOverlappingActorsOnNode_Implementation()
 {
 	TArray<AActor*> OverlappingActors;
 	Box->GetOverlappingActors(OverlappingActors);
 	return OverlappingActors;
+}
+
+void ANode::Interact_Implementation(AActor* Interactor)
+{
+	GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("node interaction null"));
+	if (AZack* Zack = Cast<AZack>(Interactor))
+	{
+		FVector MoveToLocation;
+	
+		if (bStopBeforeUnits)
+		{
+			FVector BoxLocation = Box->GetComponentLocation();
+			FVector PlayerLocation = Zack->GetActorLocation();
+			FVector Direction = (BoxLocation - PlayerLocation).GetSafeNormal();
+			MoveToLocation = BoxLocation - Direction * UnitsBeforeStop;
+			Zack->DoMoveTo(MoveToLocation);
+		}
+		else if (HiddenNode)
+		{
+			MoveToLocation = HidingLocationActor->GetActorLocation();
+			Zack->DoMoveTo(MoveToLocation,20,true);
+		}
+		else
+		{
+			MoveToLocation =  Box->GetComponentLocation();
+			Zack->DoMoveTo(MoveToLocation);
+		}
+	}
 }

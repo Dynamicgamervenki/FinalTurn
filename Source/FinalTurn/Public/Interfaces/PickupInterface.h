@@ -9,19 +9,26 @@
 #include "PickupInterface.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI)
+UINTERFACE(Blueprintable)
 class UPickupInterface : public UInterface
 {
 	GENERATED_BODY()
 };
-
-class FINALTURN_API IPickupInterface
+class FINALTURN_API IPickupInterface 
 {
 	GENERATED_BODY()
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	virtual void OnPickedUp(EPickupType PickupType, int32 Amount) = 0;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetCanClickOnNode(bool click);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetDetectedByEnemy(bool bDetected);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool GetIsHiding();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetIsHiding(bool isHiding);
 	
 	TArray<APickup*> Pickups;
 

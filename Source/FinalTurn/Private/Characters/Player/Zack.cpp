@@ -2,12 +2,9 @@
 
 
 #include "Characters/Player/Zack.h"
-
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Actors/Node.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
-#include "Breakable/BreakableActor.h"
 #include "Characters/Enemies/EnemyBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
@@ -18,10 +15,15 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Pickups/Stone.h"
 #include "Pickups/ThrowableItem.h"
+#include "Components/PawnNoiseEmitterComponent.h"
+#include "DataAssets/PickupVariantAsset.h"
+
 AZack::AZack()
 {
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	moveDistance = 500.0f;
+
+	PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawm Noise Emitter"));
 }
 
 
@@ -39,8 +41,8 @@ void AZack::BeginPlay()
 		}
 
 		PlayerController->bShowMouseCursor = true;
-		PlayerController->bEnableClickEvents     = true;
 		PlayerController->bEnableMouseOverEvents = true;
+		PlayerController->bEnableClickEvents     = true;
 
 		// Mix game input (camera, movement) with UI/clicks
 		FInputModeGameAndUI InputMode;
@@ -62,10 +64,7 @@ void AZack::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 			EnhancedInputComponent->BindAction(IA_Move,ETriggerEvent::Started,this,&AZack::OnInteract);
-			//EnhancedInputComponent->BindAction(IA_EquipWeapon,ETriggerEvent::Started,this,&AZack::EquipWeapon);
-		    //EnhancedInputComponent->BindAction(IA_EquipStone,ETriggerEvent::Started,this,&AZack::EquipPickUp);
 	}
-	
 }
 
 void AZack::Tick(float DeltaTime)
@@ -78,126 +77,95 @@ void AZack::OnInteract()
 {
 	FHitResult Hit;
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	PlayerController->GetHitResultUnderCursorForObjects(ObjectTypes,true,Hit);
+	PlayerController->GetHitResultUnderCursorForObjects(InteractableObjectTypes,true,Hit);
 	if (Hit.bBlockingHit && CanClickNode)
 	{
 		PlayInteractionSound(Hit.ImpactPoint);
-		// if (AEnemyBase* Enemy = Cast<AEnemyBase>(Hit.GetActor()))
-		// {
-		// 	GEngine->AddOnScreenDebugMessage(345,2.0f,FColor::Green,"ClickedOnCharacter");
-		// 	OverlappingActorsOnNode.Add(Enemy);
-		// 	 AttackEnemy(Enemy);
-		// }
-		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Hit Actor: %s"), Hit.GetActor() ? *Hit.GetActor()->GetName() : TEXT("None")));
 		if( Hit.GetActor()->Implements<UInteractInterface>())
 		{
-		 	if (IInteractInterface* Interact = Cast<IInteractInterface>(Hit.GetActor()))
-		 	{
-		 		MoveLocation  = Interact->InteractPosition();
-		 		OverlappingActorsOnNode = Interact->GetOverlappingActorsOnNode(); 		
-		 		switch (EquipState)
-		 		{
-		 		case EEquipState::None:
-		 			if (ABreakableActor* breakableActor = Cast<ABreakableActor>(Hit.GetActor()))
-		 			{
-		 				GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Red,FString::Printf(TEXT("Clicking On BreakableActor without equping granade")));
-		 			}
-				    else
-				    {
-				    	if (ANode* node = Cast<ANode>(Hit.GetActor()))
-				    	{
-				    		bool temp = node->DontGoToNode();
-				    		if (!temp)
-				    			DoMoveTo(MoveLocation);
-				    	}
-
-				    }
-		 			break;
-		 		case EEquipState::Stone:
-		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
-		 			break;
-
-		 		case EEquipState::Grenade:
-		 			DoThrowEquipItem(MoveLocation,Hit.GetActor());
-		 			break;
-
-		 		case EEquipState::Gun:
-		 			DoShootAt(MoveLocation);
-		 				break;
-		 		}
-		 	}
+			GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Yellow,FString::Printf(TEXT("HitActor Implements InteractInterface")));
+			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
+			PerformEquipStateAction(EquipState,MoveLocation,Hit.GetActor());
 		}
-	}
-}
-
-void AZack::EquipWeapon()
-{
-	if (PickupItem != nullptr && EquipState != EEquipState::Gun)
-	{
-		PickupItem->SetActorHiddenInGame(false);
-		PlayAnimMontages(DrawGunMontage);
-		EquipState = EEquipState::Gun;
-		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
-		PickupItem->AttachToComponent(GetMesh(), TransformRules,"GunE_Socket");
-		IsGunAiming = true;
-	}
-}
-
-
-/*void AZack::EquipPickUp(TSubclassOf<APickup> InPickUpClass , FName SocketName , EEquipState InEquipState)
-{
-	if (EquipState != EEquipState::Stone)
-	{
-		if (EquipState == EEquipState::Gun)
+		else if(ACharacter* Enemy = Cast<ACharacter>(Hit.GetActor()))
 		{
-		   PlayAnimMontageInReverse(DrawGunMontage);
-			PickupItem->SetActorHiddenInGame(true);
+			MoveLocation = Hit.GetActor()->GetActorLocation();
+			DoMoveTo(MoveLocation);
 		}
-		FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
-		FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
-		APickup* Stone = GetWorld()->SpawnActor<APickup>(InPickUpClass,SocketLocation,SocketRotation);
-		Stone->Sphere->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
-		SetEquippedItem(Stone);
-		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,true);
-		PlayAnimMontages(EquipStoneMontage);
-		Stone->AttachToComponent(GetMesh(), TransformRules,"Stone_Socket");
-		EquipState = InEquipState;
 	}
-	else
-	{
-		EquipState = EEquipState::None;
-	}
-}*/
+}
 
-void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, EEquipState InEquipState)
+void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor)
 {
+	switch (State)
+	{
+	case EEquipState::None:
+		IInteractInterface::Execute_Interact(HitActor,this);
+		break;
+	case EEquipState::Stone:
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::Grenade:
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::Dynamite:
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::HeavyDynamite: 
+		IInteractInterface::Execute_Interact(HitActor,this);
+		break;
+	case EEquipState::LavaCrystal: 
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::LavaOrb: 
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	}
+}
+
+void AZack::Equip(EPickupType Pickup)
+{
+	UPickupVariantAsset* VariantAsset = PickupVariantMap.FindRef(Pickup);
+	if (!VariantAsset || !VariantAsset->PickupData.PickupClass.IsValid())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("Invalid Variant Asset or PickupClass"));
+		return;
+	}
+
+	FPickupVariantData Data = VariantAsset->PickupData;
+	EquipPickUp(Data);
+}
+
+void AZack::EquipPickUp(FPickupVariantData PickupData)
+{
+	TSoftClassPtr<APickup> InPickUpClass = PickupData.PickupClass;
+	FName SocketName = PickupData.SocketName;
+	EEquipState InEquipState = PickupData.EquipState;
+	TSoftClassPtr<AThrowableItem> SoftThrowableClass = PickupData.ThrowableClass;
+
 	if (EquipState == InEquipState || !InPickUpClass.IsValid())
 	{
+		GEngine->AddOnScreenDebugMessage(50, 2.0f, FColor::Green, TEXT("EquipState "));
+		EquipState = EEquipState::None;
+			
 		if (EquippedItem)
 		{
 			EquippedItem->Destroy();
 			EquippedItem = nullptr;
 		}
-		EquipState = EEquipState::None;
+	
 		return;
 	}
 
 	if (!HasAmmoForEquipState(InEquipState))
 	{
+		GEngine->AddOnScreenDebugMessage(51, 2.0f, FColor::Green, TEXT("HasNoAmmo"));
 		EquipState = EEquipState::None;
 		return;
 	}
 
-	if (EquipState == EEquipState::Gun)
-	{
-		PlayAnimMontageInReverse(DrawGunMontage);
-		if (PickupItem)
-		{
-			PickupItem->SetActorHiddenInGame(true);
-		}
-	}
-
-	//  Async load the pickup class
+	GEngine->AddOnScreenDebugMessage(53, 2.0f, FColor::Green, TEXT("Aync Abt To Start"));
+	
 	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
 	Streamable.RequestAsyncLoad(
 		InPickUpClass.ToSoftObjectPath(),
@@ -205,21 +173,7 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 			this, &AZack::OnPickupClassLoaded, InPickUpClass, SocketName, InEquipState
 		)
 	);
-
-	//  Preload the corresponding throwable class too
-	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
-	switch (InEquipState)
-	{
-	case EEquipState::Stone:
-		SoftThrowableClass = ThrowableStoneClass;
-		break;
-	case EEquipState::Grenade:
-		SoftThrowableClass = ThrowableGrenadeClass;
-		break;
-	default:
-		break;
-	}
-
+	
 	if (!SoftThrowableClass.IsValid())
 	{
 		Streamable.RequestAsyncLoad(
@@ -233,13 +187,11 @@ void AZack::EquipPickUp(TSoftClassPtr<APickup> InPickUpClass, FName SocketName, 
 	}
 }
 
-
 void AZack::OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState)
 {
 	if (!LoadedClass.IsValid()) return;
 
 	UClass* ActualClass = LoadedClass.Get();
-
 	FVector SocketLocation = GetMesh()->GetSocketLocation(SocketName);
 	FRotator SocketRotation = GetMesh()->GetSocketRotation(SocketName);
 
@@ -258,38 +210,48 @@ void AZack::OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName Socket
 
 
 bool AZack::HasAmmoForEquipState(EEquipState State)
-{
+{ 
 	switch (State)
 	{
 	case EEquipState::Stone:
 		return StoneCount > 0;
 	case EEquipState::Grenade:
 		return GranadeCount > 0;
+	case EEquipState::Dynamite:
+		return DynamiteCount > 0;
+	case EEquipState::HeavyDynamite:
+	     return HeavyDynamiteCount > 0;
+	case EEquipState::LavaCrystal:
+	     return LavaCrystalCount > 0;
+	case EEquipState::LavaOrb:
+	     return LavaOrbCount > 0;
 	default:
 		return false;
 	}
 }
 
-
-
-void AZack::EquipGranade()
-{
-	
-}
-
-void AZack::DoMoveTo(const FVector& Dest)
+void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	if (distance <= moveDistance && distance > 100.0f /*&& OverlappingActorsOnNode.IsEmpty()*/) 
+	if (distance <= moveDistance && distance > 100.0f || IgnoreDistance && distance > 50.0f && distance < 750.0f || IsHiding && distance < 1000.0f) 
 	{
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
+		GEngine->AddOnScreenDebugMessage(122, 2.0f, FColor::Black, FString::Printf(TEXT("Distance: %.2f"), distance));
+
+		FVector Direction = (Dest - GetActorLocation()).GetSafeNormal();
+		FVector OffSet = Dest + Direction * OffsetValue;
+		
+		PreviousNodeLocation = GetActorLocation();
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), OffSet);
 		IsMoving = true;
-		CanClickNode = false;
+	//	CanClickNode = false;
 	}
 }
 
 void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
 {
+	if (Dest.ContainsNaN())
+		return;
+	
 	if (!CanClickOnNode(Dest))
 	{
 		GEngine->AddOnScreenDebugMessage(16, 2, FColor::Red, "TRYING TO THROW AT DISTANCE > 500");
@@ -316,13 +278,22 @@ void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
 	PlayAnimMontages(ThrowMontage);
 }
 
+void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
+{
+	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
+}
+
+void AZack::AmmoUpdateBroadCast(EPickupType type, int Ammo)
+{
+	OnPickupUpdated.Broadcast(type,Ammo);
+}
+
 
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
 	if (NotifyName != "Throw") return;
-
 	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
-
+	
 	switch (EquipState)
 	{
 	case EEquipState::Stone:
@@ -331,6 +302,19 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 	case EEquipState::Grenade:
 		SoftThrowableClass = ThrowableGrenadeClass;
 		break;
+	case EEquipState::Dynamite:
+		SoftThrowableClass = ThrowableDynamiteClass;
+		break;
+	case EEquipState::HeavyDynamite:
+		SoftThrowableClass = ThrowableHeavyDynamiteClass;
+		break;
+	case EEquipState::LavaCrystal:
+		SoftThrowableClass = ThrowableLavaCrystalClass;
+		break;
+	case EEquipState::LavaOrb:
+		SoftThrowableClass = ThrowableLavaOrbClass;
+		break;
+		
 	default:
 		return;
 	}
@@ -338,6 +322,7 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 	if (SoftThrowableClass.IsValid())
 	{
 		OnThrowableLoaded(SoftThrowableClass);
+		GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,SoftThrowableClass.ToString());
 	}
 	else
 	{
@@ -374,11 +359,17 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	SpawnedItem->SM_Throwable->SetMassOverrideInKg(NAME_None, 1.0f, true);
 	SpawnedItem->SM_Throwable->AddImpulse(FinalImpulse);
 
+	SpawnedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
+	
 	// Deduct ammo
 	switch (EquipState)
 	{
-	case EEquipState::Stone:   StoneCount--; break;
-	case EEquipState::Grenade: GranadeCount--; break;
+	case EEquipState::Stone:   StoneCount--; OnPickupUpdated.Broadcast(EPickupType::Stone, StoneCount); break;
+	case EEquipState::Grenade: GranadeCount--; OnPickupUpdated.Broadcast(EPickupType::Granade, GranadeCount); break;
+	case EEquipState::Dynamite: DynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::Dynamite, DynamiteCount); break;
+	case EEquipState::HeavyDynamite: HeavyDynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::HeavyDynamite, HeavyDynamiteCount); break;
+	case EEquipState::LavaCrystal: LavaCrystalCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaCrystalCount); break;
+	case EEquipState::LavaOrb : LavaOrbCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaOrbCount); break;
 	default: break;
 	}
 
@@ -386,85 +377,69 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	EquipState = EEquipState::None;
 }
 
-
-
-
-
-/*
-void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
+void AZack::HandleThrowableImpact(AActor* HitActor)
 {
-	if (NotifyName == "Throw")
-	{
-		FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
-		FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
-
-		if (ThrowableStoneClass && GetWorld())
-		{
-			if (EquippedItem != nullptr)
-			{
-				EquippedItem->Destroy();
-			}
-			AThrowableStone* SpawnedStone = GetWorld()->SpawnActor<AThrowableStone>(ThrowableStoneClass, SocketLocation, SocketRotation);
-			FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
-			FVector ScaledForward = ForwardVector * 500.0f;
-			float ZValue = ForwardVector.Z;
-			float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
-			float UpwardImpulse = MappedZ * 100.0f;
-
-			FVector FinalImpulse = ScaledForward + FVector(0.0f, 0.0f, UpwardImpulse);
-			SpawnedStone->SM_Stone->SetMassOverrideInKg(NAME_None, 1.0f, true);
-			SpawnedStone->SM_Stone->AddImpulse(FinalImpulse);
-			StoneCount--;
-			CanClickNode = true;
-			EquipState = EEquipState::None;
-		}
-	}
-}
-*/
-
-void AZack::DoThrowGrenadeAt(const FVector& Dest)
-{
-	GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,"Throwing Grenade");
-}
-
-
- void AZack::DoShootAt(const FVector& Dest)
- {
-	FVector Direction = (Dest - GetActorLocation()).GetSafeNormal();
-	FRotator LookRotator = Direction.Rotation();
+	if (!HitActor) return;
 	
- 	SetActorRotation(LookRotator);
-	if (BulletCount > 0 && EquipState == EEquipState::Gun && CanClickOnNode(Dest))
-	{
- 		GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,"Shooting");
-		FVector SocketLocation = GetMesh()->GetSocketLocation("socket_BulletSpawn");
-		//AActor* Bullet = GetWorld()->SpawnActor<AActor>(BulletClass,SocketLocation,LookRotator);
-		BulletCount--;
-	}
-	else
-	{
-		IsGunAiming = false;
-		GEngine->AddOnScreenDebugMessage(234,2.0f,FColor::Red,"No Bullets Left");
-		EquipState = EEquipState::None;
-		DoMoveTo(Dest);
-	}
- }
+	GEngine->AddOnScreenDebugMessage(55, 10, FColor::Red, 
+		FString::Printf(TEXT("Throwable Impact on Actor: %s"), *HitActor->GetName()));
+	FVector Location = HitActor->GetActorLocation();
+	ReportNoise(HitActor, 1.0f, Location);
+}
 
 
 void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
 {
+	int32 NewAmount = 0;
+	
 	switch (PickupType)
 	{
-	case EPickupType::Bullet:
-		BulletCount += Amount;
-		break;
 	case EPickupType::Stone:
 		StoneCount += Amount;
+		NewAmount = StoneCount;
 		break;
 	case EPickupType::Granade:
 		GranadeCount += Amount;
+		NewAmount = GranadeCount;
+		break;
+	case EPickupType::Dynamite:
+		DynamiteCount += Amount;
+		NewAmount = DynamiteCount;
+		break;
+	case EPickupType::HeavyDynamite:
+		HeavyDynamiteCount += Amount;
+		NewAmount = HeavyDynamiteCount;
+		break;
+	case EPickupType::LavaCrystal:
+		LavaCrystalCount += Amount;
+		NewAmount = LavaCrystalCount;
+		break;
+	case EPickupType::LavaOrb:
+		LavaOrbCount += Amount;
+		NewAmount = LavaOrbCount;
 		break;
 	};
+	OnPickupUpdated.Broadcast(PickupType,NewAmount);
+}
+
+void AZack::SetDetectedByEnemy_Implementation(bool bDetected)
+{
+	GotDetectedByEnemy = bDetected;
+}
+
+void AZack::SetIsHiding_Implementation(bool isHiding)
+{
+	IsHiding = isHiding;
+}
+
+bool AZack::GetIsHiding_Implementation()
+{
+	return IsHiding;
+}
+
+void AZack::SetCanClickOnNode_Implementation(bool click)
+{
+	CanClickNode = click;
 }
 
 void AZack::PrintOutData()
@@ -473,24 +448,23 @@ void AZack::PrintOutData()
 	{
 		GEngine->AddOnScreenDebugMessage(8, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("Stones: %d"), StoneCount));
-            
-		GEngine->AddOnScreenDebugMessage(9, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Bullets: %d"), BulletCount));
-            
 		GEngine->AddOnScreenDebugMessage(10, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("Grenades: %d"), GranadeCount));
-
-		GEngine->AddOnScreenDebugMessage(13, 2.0f, FColor::Yellow,
+		GEngine->AddOnScreenDebugMessage(11, 2.0f, FColor::Yellow, 
+			FString::Printf(TEXT("Dynamite: %d"), DynamiteCount));
+		GEngine->AddOnScreenDebugMessage(12, 2.0f, FColor::Yellow, 
+			FString::Printf(TEXT("HeavyDynamite: %d"), HeavyDynamiteCount));
+		GEngine->AddOnScreenDebugMessage(13, 2.0f, FColor::Yellow, 
+			FString::Printf(TEXT("LavaCrystal: %d"), LavaCrystalCount));
+		GEngine->AddOnScreenDebugMessage(14, 2.0f, FColor::Yellow, 
+			FString::Printf(TEXT("LavaOrb: %d"), LavaOrbCount));
+		GEngine->AddOnScreenDebugMessage(15, 2.0f, FColor::Yellow,
 	FString::Printf(TEXT("CanClickNode: %s"), CanClickNode ? TEXT("true") : TEXT("false")));
 		
 		GEngine->AddOnScreenDebugMessage(
 			-3, 2.0f, FColor::Yellow,
 			FString::Printf(TEXT("EquipState (int): %d"), static_cast<int32>(EquipState))
 		);
-
-		GEngine->AddOnScreenDebugMessage(11, 2.0f, FColor::Green, TEXT("Press E to Equip Gun"));
-		GEngine->AddOnScreenDebugMessage(12, 2.0f, FColor::Green, TEXT("Press F to Equip Stone"));
-
 	}
 }
 
@@ -502,38 +476,20 @@ void AZack::PlayAnimMontages(UAnimMontage* MontageToPlay)
 		AnimInstance->Montage_Play(MontageToPlay);
 		FOnMontageEnded EndDelegate;
 		EndDelegate.BindUObject(this, &AZack::OnAnimMontageEnded);
-
-		AnimInstance->Montage_Play(MontageToPlay);
 		AnimInstance->Montage_SetEndDelegate(EndDelegate, MontageToPlay);
 	}
 	else
 	{
-		const FString Msg = FString::Printf(
-		TEXT("%s: MontageToPlay is null! Did you assign it in the editor?"),
-		MontageToPlay);
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-183, 5.f, FColor::Red, TEXT("MontageToPlay is null! Did you assign it in the editor?"));
 	}
 }
 
 void AZack::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-		if (Montage == EquipStoneMontage && EquippedItem)
-		{
-			//EquippedItem->Destroy();
-		}
-		else if (Montage == StealthMontage)
-		{
-			GEngine->AddOnScreenDebugMessage(190, 2.0f, FColor::Yellow,"StealthAnimMontageEnded");
-			CanClickNode = true;
-			if (!OverlappingActorsOnNode.IsEmpty())
-			{
-				if ( AEnemyBase* enemy = Cast<AEnemyBase>(OverlappingActorsOnNode[0]))
-				{
-	                enemy->GetCharacterMovement()->StopMovementImmediately();
-					enemy->IsDead = true;
-					//OverlappingActorsOnNode[0]->Destroy();
-				}
-			}
-		}
+	// if (Montage == PlaceHeavyDynamiteMontage)
+	// {
+	// 	DoMoveTo(PreviousNodeLocation);
+	// }
 }
 
 void AZack::PlayAnimMontageInReverse(UAnimMontage* MontageToPlay)
@@ -550,14 +506,5 @@ void AZack::PlayAnimMontageInReverse(UAnimMontage* MontageToPlay)
 bool AZack::CanClickOnNode(const FVector& Dest)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	return (distance <= moveDistance && distance > 100.0f);
-}
-
-void AZack::AttackEnemy(AActor* actor)
-{
-	FVector Dest = actor->GetActorLocation();
-	TargetEnemyLocation = Dest;
-	UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), Dest);
-	IsMoving = true;
-	CanClickNode = false;
+	return (distance <= moveDistance  && distance > 100.0f);
 }

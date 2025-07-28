@@ -1,12 +1,53 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Surya\\Documents\\GitHub\\FinalTurn\\",
-  "Documents": [],
+  "WorkspaceRootPath": "D:\\Unreal\\FinalTurn\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A3B383BC-7A9E-39CD-9772-A4E3EB6642F1}|Intermediate\\ProjectFiles\\FinalTurn.vcxproj|D:\\Unreal\\FinalTurn\\Source\\FinalTurn\\Private\\Actors\\Node.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A3B383BC-7A9E-39CD-9772-A4E3EB6642F1}|Intermediate\\ProjectFiles\\FinalTurn.vcxproj|solutionrelative:Source\\FinalTurn\\Private\\Actors\\Node.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A3B383BC-7A9E-39CD-9772-A4E3EB6642F1}|Intermediate\\ProjectFiles\\FinalTurn.vcxproj|D:\\Unreal\\FinalTurn\\Source\\FinalTurn\\Public\\Actors\\Node.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A3B383BC-7A9E-39CD-9772-A4E3EB6642F1}|Intermediate\\ProjectFiles\\FinalTurn.vcxproj|solutionrelative:Source\\FinalTurn\\Public\\Actors\\Node.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Node.cpp",
+              "DocumentMoniker": "D:\\Unreal\\FinalTurn\\Source\\FinalTurn\\Private\\Actors\\Node.cpp",
+              "RelativeDocumentMoniker": "Source\\FinalTurn\\Private\\Actors\\Node.cpp",
+              "ToolTip": "D:\\Unreal\\FinalTurn\\Source\\FinalTurn\\Private\\Actors\\Node.cpp",
+              "RelativeToolTip": "Source\\FinalTurn\\Private\\Actors\\Node.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-07-11T14:06:35.06Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Node.h",
+              "DocumentMoniker": "D:\\Unreal\\FinalTurn\\Source\\FinalTurn\\Public\\Actors\\Node.h",
+              "RelativeDocumentMoniker": "Source\\FinalTurn\\Public\\Actors\\Node.h",
+              "ToolTip": "D:\\Unreal\\FinalTurn\\Source\\FinalTurn\\Public\\Actors\\Node.h",
+              "RelativeToolTip": "Source\\FinalTurn\\Public\\Actors\\Node.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-07-11T14:06:33.209Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
