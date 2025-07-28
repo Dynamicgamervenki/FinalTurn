@@ -143,6 +143,12 @@ protected:
     UPROPERTY(EditAnywhere)
     TSoftClassPtr<AThrowableItem> ThrowableHeavyDynamiteClass;
     
+    UPROPERTY(EditAnywhere)
+    TSoftClassPtr<AThrowableItem> ThrowableLavaCrystalClass;
+
+    UPROPERTY(EditAnywhere)
+    TSoftClassPtr<AThrowableItem> ThrowableLavaOrbClass;
+    
     // --- Animation Montages ---
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* ThrowMontage;

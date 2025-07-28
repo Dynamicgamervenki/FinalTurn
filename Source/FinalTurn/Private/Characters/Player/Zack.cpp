@@ -114,6 +114,12 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 	case EEquipState::HeavyDynamite: 
 		IInteractInterface::Execute_Interact(HitActor,this);
 		break;
+	case EEquipState::LavaCrystal: 
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
+	case EEquipState::LavaOrb: 
+		DoThrowEquipItem(InteractLocation,HitActor);
+		break;
 	}
 }
 
@@ -215,6 +221,10 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 		return DynamiteCount > 0;
 	case EEquipState::HeavyDynamite:
 	     return HeavyDynamiteCount > 0;
+	case EEquipState::LavaCrystal:
+	     return LavaCrystalCount > 0;
+	case EEquipState::LavaOrb:
+	     return LavaOrbCount > 0;
 	default:
 		return false;
 	}
@@ -298,6 +308,13 @@ void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPoin
 	case EEquipState::HeavyDynamite:
 		SoftThrowableClass = ThrowableHeavyDynamiteClass;
 		break;
+	case EEquipState::LavaCrystal:
+		SoftThrowableClass = ThrowableLavaCrystalClass;
+		break;
+	case EEquipState::LavaOrb:
+		SoftThrowableClass = ThrowableLavaOrbClass;
+		break;
+		
 	default:
 		return;
 	}
@@ -431,16 +448,17 @@ void AZack::PrintOutData()
 	{
 		GEngine->AddOnScreenDebugMessage(8, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("Stones: %d"), StoneCount));
-            
 		GEngine->AddOnScreenDebugMessage(10, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("Grenades: %d"), GranadeCount));
-		
 		GEngine->AddOnScreenDebugMessage(11, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("Dynamite: %d"), DynamiteCount));
 		GEngine->AddOnScreenDebugMessage(12, 2.0f, FColor::Yellow, 
 			FString::Printf(TEXT("HeavyDynamite: %d"), HeavyDynamiteCount));
-
-		GEngine->AddOnScreenDebugMessage(13, 2.0f, FColor::Yellow,
+		GEngine->AddOnScreenDebugMessage(13, 2.0f, FColor::Yellow, 
+			FString::Printf(TEXT("LavaCrystal: %d"), LavaCrystalCount));
+		GEngine->AddOnScreenDebugMessage(14, 2.0f, FColor::Yellow, 
+			FString::Printf(TEXT("LavaOrb: %d"), LavaOrbCount));
+		GEngine->AddOnScreenDebugMessage(15, 2.0f, FColor::Yellow,
 	FString::Printf(TEXT("CanClickNode: %s"), CanClickNode ? TEXT("true") : TEXT("false")));
 		
 		GEngine->AddOnScreenDebugMessage(
