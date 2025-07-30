@@ -60,7 +60,7 @@ public:
     bool GotDetectedByEnemy = false;
     
     // --- Inline Setters for Pickup Items ---
-    FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped; }
+    FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped;}
 
     UFUNCTION()
     void DoMoveTo(const FVector& Dest,float Offset = 20,bool IgnoreDistance = false);
