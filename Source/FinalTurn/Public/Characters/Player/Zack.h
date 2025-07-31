@@ -67,7 +67,7 @@ public:
     
     // --- Internal State ---
     EEquipState EquipState = EEquipState::None;
-    void DoThrowEquipItem(const FVector& Dest,AActor* HitActor);
+    void DoThrowEquipItem(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
 
     void PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor);
 
@@ -160,10 +160,12 @@ protected:
     UAnimMontage* PlaceHeavyDynamiteMontage;
 
     UFUNCTION(BlueprintCallable)
-    bool CanClickOnNode(const FVector &Dest);
-
+    bool CanClickOnNode(const FVector &Dest,bool IgnoreDistance = false);
+    
     UPROPERTY(BlueprintReadWrite)
     FVector MoveLocation;
+    UPROPERTY(BlueprintReadWrite)
+    FVector HitImpactLocation;
     
     UFUNCTION(BlueprintImplementableEvent)
     void PlayInteractionSound(FVector Location);

@@ -70,7 +70,7 @@ void AZack::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AZack::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	PrintOutData();
+	//PrintOutData();
 }
 
 void AZack::OnInteract()
@@ -85,6 +85,7 @@ void AZack::OnInteract()
 		{
 			GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Yellow,FString::Printf(TEXT("HitActor Implements InteractInterface")));
 			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
+			HitImpactLocation = Hit.Location;
 			PerformEquipStateAction(EquipState,MoveLocation,Hit.GetActor());
 		}
 		else if(ACharacter* Enemy = Cast<ACharacter>(Hit.GetActor()))
@@ -118,7 +119,7 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 		DoThrowEquipItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::LavaOrb: 
-		DoThrowEquipItem(InteractLocation,HitActor);
+		DoThrowEquipItem(InteractLocation,HitActor,true);
 		break;
 	}
 }
@@ -247,12 +248,12 @@ void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 	}
 }
 
-void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
+void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor,bool IgnoreDistance)
 {
 	if (Dest.ContainsNaN())
 		return;
 	
-	if (!CanClickOnNode(Dest))
+	if (!CanClickOnNode(Dest,IgnoreDistance))
 	{
 		GEngine->AddOnScreenDebugMessage(16, 2, FColor::Red, "TRYING TO THROW AT DISTANCE > 500");
 		return;
@@ -349,8 +350,9 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	AThrowableItem* SpawnedItem = GetWorld()->SpawnActor<AThrowableItem>(ActualClass, SocketLocation, SocketRotation);
 	if (!SpawnedItem || !SpawnedItem->SM_Throwable) return;
 
+	double distance = UKismetMathLibrary::Vector_Distance(HitImpactLocation,GetActorLocation());
 	FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
-	FVector ScaledForward = ForwardVector * 500.0f;
+	FVector ScaledForward = ForwardVector * distance;
 	float ZValue = ForwardVector.Z;
 	float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
 	float UpwardImpulse = MappedZ * 100.0f;
@@ -503,8 +505,8 @@ void AZack::PlayAnimMontageInReverse(UAnimMontage* MontageToPlay)
 	}
 }
 
-bool AZack::CanClickOnNode(const FVector& Dest)
+bool AZack::CanClickOnNode(const FVector& Dest,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	return (distance <= moveDistance  && distance > 100.0f);
+	return (distance <= moveDistance  && distance > 100.0f || IgnoreDistance);
 }

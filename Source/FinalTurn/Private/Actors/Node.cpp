@@ -42,11 +42,6 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 			UGameplayStatics::OpenLevel(this,LevelName);
 			GetCompletedLevel();
 		}
-		// else if (HiddenNode)
-		// {
-		// 	GEngine->AddOnScreenDebugMessage(112, 5.f, FColor::Yellow, TEXT("Hidden Node"));
-		// 	Zack->DoMoveTo(HidingLocation);
-		// }
 		GEngine->AddOnScreenDebugMessage(-12, 2.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
 		Zack->IsMoving = false;
 		Zack->CanClickNode = true;

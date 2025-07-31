@@ -26,9 +26,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetDetectedByEnemy(bool bDetected);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	bool GetIsHiding();
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetIsHiding(bool isHiding);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool GetIsHiding();
 	
 	TArray<APickup*> Pickups;
 
