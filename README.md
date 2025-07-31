@@ -10,6 +10,8 @@
 - Solve pathing puzzles by planning each move carefully.
 - Avoid detection, stealth-kill guards, or destroy obstacles.
 - Strategically escape or clear your way through each level.
+  
+- https://github.com/user-attachments/assets/c35230ad-aae7-4fc2-af13-0ccc5e95302f
 
 - https://github.com/user-attachments/assets/dbf829ac-c5f3-4aa5-8404-d2837d6292a1
 
