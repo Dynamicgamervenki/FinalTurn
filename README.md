@@ -5,7 +5,7 @@
 ## 📱 Platform
 - Android (Will be Published on Google Play Soon , Currently in ClosedTesting)
 
-## 🎮 Gameplay
+## 🎮 Gameplay && Screenshots
 - Navigate using node-based movement.
 - Solve pathing puzzles by planning each move carefully.
 - Avoid detection, stealth-kill guards, or destroy obstacles.
@@ -18,6 +18,17 @@
 - https://github.com/user-attachments/assets/46e59159-d0ab-48c0-a966-7c4a139419ba
 
 - https://github.com/user-attachments/assets/4c2ad2e6-b243-4ef4-a519-8788e955be20
+
+- <img width="1981" height="1254" alt="Image" src="https://github.com/user-attachments/assets/ab6d8e0d-4dfb-4beb-a78d-3d465cdb6309" />
+
+- <img width="1981" height="1254" alt="Image" src="https://github.com/user-attachments/assets/df83c880-a752-4ab8-8662-23ea53a7a035" />
+
+- <img width="2560" height="1392" alt="Image" src="https://github.com/user-attachments/assets/e76edf5a-a775-417e-ab68-833a45c2c019" />
+
+- <img width="2560" height="1392" alt="Image" src="https://github.com/user-attachments/assets/42a2473b-f9f7-4c94-a2f2-e6e7895a5219" />
+
+- <img width="1981" height="1254" alt="Image" src="https://github.com/user-attachments/assets/69654c08-7ee5-4b08-a3a4-b1b9956ded6e" />
+
 
 ## ✨ Features
 - Turn-based node movement
