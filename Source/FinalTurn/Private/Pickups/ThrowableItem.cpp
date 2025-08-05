@@ -15,6 +15,8 @@ AThrowableItem::AThrowableItem()
 	SM_Throwable->SetCanEverAffectNavigation(false);
 	SM_Throwable->SetSimulatePhysics(true);
 	SM_Throwable->SetCollisionProfileName(TEXT("PhysicsActor"));
+	SM_Throwable->SetRenderCustomDepth(true);
+	SM_Throwable->SetCustomDepthStencilValue(1);
 	RootComponent = SM_Throwable;
 
 	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");

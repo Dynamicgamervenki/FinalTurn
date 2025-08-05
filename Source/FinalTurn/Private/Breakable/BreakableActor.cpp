@@ -64,6 +64,17 @@ void ABreakableActor::Interact_Implementation(AActor* Interactor)
 	}
 }
 
+void ABreakableActor::Glow_Implementation()
+{
+	GeometryCollection->SetRenderCustomDepth(true);
+	GeometryCollection->SetCustomDepthStencilValue(1);
+}
+
+void ABreakableActor::ResetGlow_Implementation()
+{
+	GeometryCollection->SetRenderCustomDepth(false);
+	GeometryCollection->SetCustomDepthStencilValue(0);
+}
 
 FVector ABreakableActor::InteractPosition_Implementation()
 {

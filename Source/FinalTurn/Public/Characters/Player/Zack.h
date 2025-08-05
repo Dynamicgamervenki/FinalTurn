@@ -173,6 +173,11 @@ protected:
     UPROPERTY(EditAnywhere, Category="Pickup Variants")
     TMap<EPickupType, UPickupVariantAsset*> PickupVariantMap;
 
+    UFUNCTION(BlueprintImplementableEvent)
+    void HighlightNearByNodes();
+    UFUNCTION(BlueprintImplementableEvent)
+    void DisableHighlightEffect();
+    
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);

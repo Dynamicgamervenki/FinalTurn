@@ -94,7 +94,19 @@ void ANode::Interact_Implementation(AActor* Interactor)
 	}
 }
 
+void ANode::Glow_Implementation()
+{
+	GlowNode();
+}
+
+void ANode::ResetGlow_Implementation()
+{
+	SM_Node->SetRenderCustomDepth(false);
+	SM_Node->SetCustomDepthStencilValue(0);
+}
+
 void ANode::GlowNode()
 {
-	
+	SM_Node->SetRenderCustomDepth(true);
+	SM_Node->SetCustomDepthStencilValue(1);
 }

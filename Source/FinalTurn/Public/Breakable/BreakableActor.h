@@ -32,15 +32,17 @@ protected:
 	virtual FVector InteractPosition_Implementation() override;
 	virtual TArray<AActor*> GetOverlappingActorsOnNode_Implementation() override;
 	virtual void Interact_Implementation(AActor* Interactor) override;
+	virtual void Glow_Implementation() override;
+	virtual void ResetGlow_Implementation() override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Breakable")
 	int AmountToGetDestoryed = 1;
 	UPROPERTY(BlueprintReadWrite, Category="Breakable")
 	int ThrownCount;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category=Default)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category=Breakable)
 	bool bPlaceHeavyDynamiteOnClick;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category=Default)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bPlaceHeavyDynamiteOnClick"))
 	AActor* HeavydynamitePlacingPositionActor;
 
 private:
@@ -49,11 +51,10 @@ private:
 
 public:
 	FORCEINLINE bool ShouldPlaceHeavyDynamiteOnClick() const{ return bPlaceHeavyDynamiteOnClick; }
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
-	bool bStopBeforeUnits;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
-	float UnitsBeforeStop = 100.0f;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Breakable)
 	EPickupType DestoroyablePickup;
-	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Breakable)
+	bool bStopBeforeUnits;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bStopBeforeUnits"))
+	float UnitsBeforeStop = 100.0f;
 };

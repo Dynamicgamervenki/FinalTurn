@@ -25,4 +25,8 @@ public:
 	TArray<AActor*> GetOverlappingActorsOnNode();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void Interact(AActor* Interactor);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void Glow();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void ResetGlow();
 };

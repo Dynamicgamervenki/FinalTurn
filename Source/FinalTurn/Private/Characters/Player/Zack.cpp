@@ -153,6 +153,7 @@ void AZack::EquipPickUp(FPickupVariantData PickupData)
 		{
 			EquippedItem->Destroy();
 			EquippedItem = nullptr;
+			DisableHighlightEffect();
 		}
 	
 		return;
@@ -166,6 +167,7 @@ void AZack::EquipPickUp(FPickupVariantData PickupData)
 	}
 
 	GEngine->AddOnScreenDebugMessage(53, 2.0f, FColor::Green, TEXT("Aync Abt To Start"));
+	HighlightNearByNodes();
 	
 	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
 	Streamable.RequestAsyncLoad(
@@ -200,6 +202,8 @@ void AZack::OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName Socket
 	if (!Pickup) return;
 
 	Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	Pickup->ItemMesh->SetRenderCustomDepth(true);
+	Pickup->ItemMesh->SetCustomDepthStencilValue(1);
 	SetEquippedItem(Pickup);
 
 	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
@@ -292,6 +296,7 @@ void AZack::AmmoUpdateBroadCast(EPickupType type, int Ammo)
 
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
+	DisableHighlightEffect();
 	if (NotifyName != "Throw") return;
 	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
 	
