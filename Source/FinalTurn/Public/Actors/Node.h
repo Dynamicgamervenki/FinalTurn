@@ -34,12 +34,12 @@ protected:
 	virtual FVector InteractPosition_Implementation() override;
 	virtual TArray<AActor*> GetOverlappingActorsOnNode_Implementation() override;
 	virtual void Interact_Implementation(AActor* Interactor) override;
+
+	UFUNCTION()
+	void GlowNode();
 	
-	UPROPERTY(EditAnywhere)
-	bool bDontGoToNode = false;
-public : 
-	FORCEINLINE bool DontGoToNode() { return bDontGoToNode; }
-		
+public :
+	
 	UPROPERTY(EditAnywhere, Category= Default)
 	bool Is_EndNode;
 	UPROPERTY(EditAnywhere,Category= Default)

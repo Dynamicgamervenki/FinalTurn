@@ -93,3 +93,8 @@ void ANode::Interact_Implementation(AActor* Interactor)
 		}
 	}
 }
+
+void ANode::GlowNode()
+{
+	
+}
