@@ -4,6 +4,8 @@
 #include "Pickups/Pickup.h"
 #include "Components/SphereComponent.h"
 #include "Characters/Player/Zack.h"
+#include "Field/FieldSystemComponent.h"
+#include "Field/FieldSystemObjects.h"
 
 APickup::APickup()
 {
@@ -17,6 +19,9 @@ APickup::APickup()
 	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");
 	Sphere->SetupAttachment(RootComponent);
 	
+	RadialFalloff = CreateDefaultSubobject<URadialFalloff>(TEXT("RadialFalloff"));
+	FieldSystemMetaDataFilter = CreateDefaultSubobject<UFieldSystemMetaData>(TEXT("FieldSystemMetaDataFilter"));
+	RadialVector = CreateDefaultSubobject<URadialVector>(TEXT("RadialVector"));
 }
 
 void APickup::BeginPlay()
@@ -30,17 +35,13 @@ void APickup::BeginPlay()
 void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor->Implements<UPickupInterface	>())
+	if (AZack* Zack = Cast<AZack>(OtherActor))
 	{
 		PlayPickUpSound(GetActorLocation());
-		IPickupInterface* Pickup = Cast<IPickupInterface>(OtherActor);
-		if (Pickup && OtherActor)
-		{
-			Pickup->OnPickedUp(PickupType,PickupAmount);
-			Pickup->AddToPickupArray(this);
-			this->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
-			Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		}
+		this->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Zack->OnPickedUp(PickupType,PickupAmount);
+		Zack->AddPickUpItem(this);
 	}
 }
 

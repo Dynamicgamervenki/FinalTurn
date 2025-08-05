@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "Pickups/Pickup.h"
 #include "Pickups/PickupType.h"
 #include "PickupInterface.generated.h"
 
@@ -29,9 +28,4 @@ public:
 	void SetIsHiding(bool isHiding);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool GetIsHiding();
-	
-	TArray<APickup*> Pickups;
-
-	FORCEINLINE void AddToPickupArray(APickup* Pickup) {Pickups.Add(Pickup);}
-
 };

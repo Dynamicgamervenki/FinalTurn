@@ -5,6 +5,7 @@
 #include "Characters/Player/Zack.h"
 #include "Components/SphereComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
+#include "Pickups/Pickup.h"
 
 ABreakableActor::ABreakableActor()
 {
@@ -36,6 +37,15 @@ void ABreakableActor::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 			Zack->BreakableActor = this;
 			Zack->HeavyDynamiteSpawnLocation = HeavydynamitePlacingPositionActor->GetActorLocation();
 			Zack->PlayPlacignHeavyDynamiteMontage();
+		}
+	}
+	else if (APickup* Pickup = Cast<APickup>(OtherActor))
+	{
+		Hit++;
+		if (Hit == AmountToGetDestoryed)
+		{
+			Pickup->Field(GetActorLocation());	
+			SetLifeSpan(2.0f);
 		}
 	}
 }

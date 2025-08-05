@@ -66,9 +66,10 @@ public:
     void DoMoveTo(const FVector& Dest,float Offset = 20,bool IgnoreDistance = false);
     
     // --- Internal State ---
+    UPROPERTY(BlueprintReadWrite)
     EEquipState EquipState = EEquipState::None;
-    void DoThrowEquipItem(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
-
+    void ThrowEquippedItem(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
+    
     void PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor);
 
     UFUNCTION(BlueprintCallable)
@@ -86,12 +87,17 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Breakable")
     AActor* BreakableActor;
 
+    UPROPERTY(BlueprintReadWrite)
+    TArray<APickup*> PickupActors;
+    
+    UFUNCTION(BlueprintCallable)
+    void AddPickUpItem(APickup* Pickup);
+    
 protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
     UFUNCTION(BlueprintCallable) void Equip(EPickupType Pickup);
-    UFUNCTION() void EquipPickUp(FPickupVariantData PickupData);
-    
+    UFUNCTION() void EquipPickupFromInventory(FPickupVariantData PickupData);
     // --- Debug/Utility ---
     UFUNCTION()
     void PrintOutData();
@@ -192,8 +198,8 @@ private:
     UFUNCTION()
     bool HasAmmoForEquipState(EEquipState State);
     UFUNCTION()
-    void OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState);
+    void HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState);
     UFUNCTION()
-    void OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass);
+    void OnThrowableLoaded();
     
 };

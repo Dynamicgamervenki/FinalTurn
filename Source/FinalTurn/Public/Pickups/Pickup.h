@@ -7,6 +7,11 @@
 #include "Pickups/PickupType.h"
 #include "Pickup.generated.h"
 
+class UFieldSystemComponent;
+class URadialVector;
+class UFieldSystemMetaData;
+class URadialFalloff;
+class URadialVector;
 class USphereComponent;
 
 UCLASS()
@@ -28,7 +33,7 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
 	UStaticMeshComponent* ItemMesh;
 
 	UPROPERTY(VisibleAnywhere)
@@ -42,5 +47,14 @@ public:
 
 	UPROPERTY(EditInstanceOnly,BlueprintReadWrite)
 	int PickupAmount = 0;
+	
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<URadialFalloff> RadialFalloff;
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<UFieldSystemMetaData> FieldSystemMetaDataFilter;
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<URadialVector> RadialVector;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void Field(FVector Location);
 };

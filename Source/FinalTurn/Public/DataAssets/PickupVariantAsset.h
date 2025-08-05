@@ -22,12 +22,6 @@ struct FPickupVariantData
 	EEquipState EquipState; 
 
 	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<APickup> PickupClass;
-
-	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<AThrowableItem> ThrowableClass;
-
-	UPROPERTY(EditAnywhere)
 	FName SocketName; 
 };
 UCLASS()
