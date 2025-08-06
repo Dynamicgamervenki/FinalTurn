@@ -13,6 +13,8 @@ ABreakableActor::ABreakableActor()
 	GeometryCollection = CreateDefaultSubobject<UGeometryCollectionComponent>("GeometryCollection");
 	SetRootComponent(GeometryCollection);
 	GeometryCollection->SetGenerateOverlapEvents(true);
+	GeometryCollection->SetNotifyBreaks(true);
+	GeometryCollection->OnChaosBreakEvent.AddDynamic(this,&ABreakableActor::OnGeometryCollectionBreak);
 
 	SphereCollision = CreateDefaultSubobject<USphereComponent>("BoxComponent");
 	SphereCollision->SetupAttachment(GeometryCollection);
@@ -45,7 +47,7 @@ void ABreakableActor::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 		if (Hit == AmountToGetDestoryed)
 		{
 			Pickup->Field(GetActorLocation());	
-			SetLifeSpan(2.0f);
+			SetLifeSpan(3.0f);
 		}
 	}
 }
@@ -84,6 +86,12 @@ void ABreakableActor::ResetGlow_Implementation()
 {
 	GeometryCollection->SetRenderCustomDepth(false);
 	GeometryCollection->SetCustomDepthStencilValue(0);
+}
+
+void ABreakableActor::OnGeometryCollectionBreak(const FChaosBreakEvent& BreakEvent)
+{
+	GeometryCollection->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
+	SetLifeSpan(1.0f);
 }
 
 FVector ABreakableActor::InteractPosition_Implementation()

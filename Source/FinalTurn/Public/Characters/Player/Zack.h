@@ -87,7 +87,7 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Breakable")
     AActor* BreakableActor;
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(VisibleInstanceOnly,BlueprintReadWrite,Category = Default)
     TArray<APickup*> PickupActors;
     
     UFUNCTION(BlueprintCallable)
@@ -121,7 +121,7 @@ protected:
     // --- Pickup Items ---
     UPROPERTY(VisibleAnywhere, Category = "Combat")
     APickup* PickupItem;
-    UPROPERTY(VisibleAnywhere, Category = "Combat")
+    UPROPERTY(BlueprintReadWrite, Category = "Combat")
     APickup* EquippedItem;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 StoneCount;
@@ -183,6 +183,9 @@ protected:
     void HighlightNearByNodes();
     UFUNCTION(BlueprintImplementableEvent)
     void DisableHighlightEffect();
+
+    UFUNCTION(BlueprintCallable)
+    void PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass);
     
 private:
     UFUNCTION()
@@ -201,5 +204,7 @@ private:
     void HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState);
     UFUNCTION()
     void OnThrowableLoaded();
+    UFUNCTION()
+    void PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup);
     
 };

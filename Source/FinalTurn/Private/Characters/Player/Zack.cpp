@@ -167,24 +167,27 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 		EquipState = EEquipState::None;
 		return;
 	}
-
-	GEngine->AddOnScreenDebugMessage(53, 2.0f, FColor::Green, TEXT("Aync Abt To Start"));
+	
 	HighlightNearByNodes();
 	APickup* Pickup = nullptr;
 	for (APickup* pickup : PickupActors)
 	{
-		if (pickup->PickupType == PickupData.PickupType)
+		if (pickup && pickup->PickupType == PickupData.PickupType)
 		{
 			Pickup = pickup;
+			break;
 		}
+	}
+	if (!Pickup)
+	{
+		GEngine->AddOnScreenDebugMessage(58, 2.0f, FColor::Green, TEXT("Cannot Find The Equip Pickup in PickupArray"));
+		return;
 	}
 	HandlePickupEquipped(Pickup,SocketName, InEquipState);
 }
 
 void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState)
 {
-	if (!Pickup) return;
-
 	Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	Pickup->ItemMesh->SetRenderCustomDepth(true);
 	Pickup->ItemMesh->SetCustomDepthStencilValue(1);
@@ -217,6 +220,51 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 		return false;
 	}
 }
+
+void AZack::PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass)
+{
+	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+	Streamable.RequestAsyncLoad(
+		pickupClass.ToSoftObjectPath(),
+		FStreamableDelegate::CreateUObject(
+			this,&AZack::PickupAsyncLoaded,pickupClass
+		)
+	);
+}
+
+
+void AZack::PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup)
+{
+	UClass* LoadedUClass = loadedPickup.Get(); 
+	if (!LoadedUClass) 
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to get UClass for pickup!"));
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+
+	FVector SpawnLocation = FVector::ZeroVector;
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+	APickup* pickup = GetWorld()->SpawnActor<APickup>(
+		LoadedUClass,
+		SpawnLocation,
+		SpawnRotation,
+		SpawnParams
+	);
+	if (pickup)
+	{
+		pickup->SetActorEnableCollision(false);
+		pickup->SetActorScale3D(FVector(2, 2, 2));
+		AddPickUpItem(pickup);
+	}
+}
+
+
 
 void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 {
@@ -279,9 +327,9 @@ void AZack::AmmoUpdateBroadCast(EPickupType type, int Ammo)
 
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
-	DisableHighlightEffect();
 	if (NotifyName != "Throw") return;
 
+	DisableHighlightEffect();
 	OnThrowableLoaded();
 }
 
@@ -304,8 +352,11 @@ void AZack::OnThrowableLoaded()
 	EquippedItem->ItemMesh->SetCollisionResponseToAllChannels(ECR_Block);
 	EquippedItem->ItemMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 	EquippedItem->ItemMesh->SetMassOverrideInKg(NAME_None, 1.0f, true);
+	EquippedItem->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	EquippedItem->Sphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
 	EquippedItem->ItemMesh->AddImpulse(FinalImpulse);
 	PickupActors.Remove(EquippedItem);
+	EquippedItem->Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	EquippedItem = nullptr;
 	
 	//EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
@@ -325,6 +376,7 @@ void AZack::OnThrowableLoaded()
 	CanClickNode = true;
 	EquipState = EEquipState::None;
 }
+
 
 void AZack::HandleThrowableImpact(AActor* HitActor)
 {

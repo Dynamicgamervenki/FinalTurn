@@ -7,6 +7,7 @@
 #include "Interfaces/InteractInterface.h"
 #include "BreakableActor.generated.h"
 
+struct FChaosBreakEvent;
 enum class EPickupType : uint8;
 class USphereComponent;
 class UGeometryCollectionComponent;
@@ -45,10 +46,13 @@ protected:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bPlaceHeavyDynamiteOnClick"))
 	AActor* HeavydynamitePlacingPositionActor;
 
+	UFUNCTION()
+	void OnGeometryCollectionBreak(const FChaosBreakEvent& BreakEvent);
 private:
 	UPROPERTY(VisibleAnywhere)
 	UGeometryCollectionComponent* GeometryCollection;
 	int Hit = 0;
+
 
 public:
 	FORCEINLINE bool ShouldPlaceHeavyDynamiteOnClick() const{ return bPlaceHeavyDynamiteOnClick; }

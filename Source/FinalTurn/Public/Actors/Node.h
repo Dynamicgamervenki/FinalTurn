@@ -39,7 +39,7 @@ protected:
 	
 public :
 	
-	UPROPERTY(EditAnywhere, Category= Default)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool Is_EndNode;
 	UPROPERTY(EditAnywhere, Category=Default, meta=(EditCondition="Is_EndNode"))
 	FName LevelName;

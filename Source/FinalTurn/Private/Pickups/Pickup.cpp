@@ -28,7 +28,7 @@ void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 	Sphere->OnComponentBeginOverlap.AddDynamic(this,&APickup::OnSphereOverlap);
-	Sphere->OnComponentEndOverlap.AddDynamic(this,&APickup::OnSphereEndOverlap);
+	//Sphere->OnComponentEndOverlap.AddDynamic(this,&APickup::OnSphereEndOverlap);
 	
 }
 
@@ -43,17 +43,28 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 		Zack->OnPickedUp(PickupType,PickupAmount);
 		Zack->AddPickUpItem(this);
 	}
-}
-
-void APickup::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
+	else
+	{
+		//SetActorHiddenInGame(true);
+		SetLifeSpan(2.0f);
+	}
 	
 }
+
+// void APickup::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+// 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+// {
+// 	
+// }
 
 void APickup::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void APickup::ActivateField(FVector Location)
+{
+	Field(Location);
 }
 
 
