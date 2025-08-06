@@ -34,21 +34,11 @@ void ABreakableActor::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 {
 	if (AZack* Zack = Cast<AZack>(OtherActor))
 	{
-		if (bPlaceHeavyDynamiteOnClick && Zack->EquipState == EEquipState::HeavyDynamite)
-		{
-			Zack->BreakableActor = this;
-			Zack->HeavyDynamiteSpawnLocation = HeavydynamitePlacingPositionActor->GetActorLocation();
-			Zack->PlayPlacignHeavyDynamiteMontage();
-		}
+		HandleZackOverlap(Zack);
 	}
 	else if (APickup* Pickup = Cast<APickup>(OtherActor))
 	{
-		Hit++;
-		if (Hit == AmountToGetDestoryed)
-		{
-			Pickup->Field(GetActorLocation());	
-			SetLifeSpan(3.0f);
-		}
+		HandlePickupOverlap(Pickup);
 	}
 }
 
@@ -73,6 +63,40 @@ void ABreakableActor::Interact_Implementation(AActor* Interactor)
 			}
 			Zack->DoMoveTo(MoveToLocation,0,true);
 		}
+	}
+}
+
+void ABreakableActor::HandleZackOverlap(AZack* Zack)
+{
+	if (bPlaceHeavyDynamiteOnClick && Zack->EquipState == EEquipState::HeavyDynamite)
+	{
+		Zack->BreakableActor = this;
+		Zack->HeavyDynamiteSpawnLocation = HeavydynamitePlacingPositionActor->GetActorLocation();
+		Zack->PlayPlacignHeavyDynamiteMontage();
+	}
+}
+
+void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
+{
+	bool bIsCorrectPickupType = false;
+	for (EPickupType type : DestoroyablePickup)
+	{
+		if (type == Pickup->PickupType)
+		{
+			bIsCorrectPickupType = true;
+			break;
+		}
+	}
+	if (!bIsCorrectPickupType)
+	{
+		GEngine->AddOnScreenDebugMessage(212, 5.f, FColor::Red, TEXT("Trying To Destroy With Wrong Pickup"));
+		return;
+	}
+	Hit++;
+	if (Hit == AmountToGetDestoryed)
+	{
+		Pickup->Field(GetActorLocation());
+		SetLifeSpan(3.0f);
 	}
 }
 

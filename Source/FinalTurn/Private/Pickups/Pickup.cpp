@@ -46,7 +46,7 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	else
 	{
 		//SetActorHiddenInGame(true);
-		SetLifeSpan(2.0f);
+		SetLifeSpan(1.5f);
 	}
 	
 }
