@@ -135,25 +135,7 @@ protected:
     int32 LavaCrystalCount;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 LavaOrbCount;
-
-    // --- Projectile Classes ---
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableStoneClass;
-
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableGrenadeClass;
-
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableDynamiteClass;
     
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableHeavyDynamiteClass;
-    
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableLavaCrystalClass;
-
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableLavaOrbClass;
     
     // --- Animation Montages ---
     UPROPERTY(EditDefaultsOnly, Category = "Montages")

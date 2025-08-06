@@ -8,7 +8,6 @@
 #include "PickupVariantAsset.generated.h"
 
 class APickup;
-class AThrowableItem;
 
 USTRUCT(BlueprintType)
 struct FPickupVariantData
