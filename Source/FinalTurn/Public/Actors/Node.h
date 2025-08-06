@@ -34,32 +34,33 @@ protected:
 	virtual FVector InteractPosition_Implementation() override;
 	virtual TArray<AActor*> GetOverlappingActorsOnNode_Implementation() override;
 	virtual void Interact_Implementation(AActor* Interactor) override;
+	virtual void Glow_Implementation() override;
+	virtual void ResetGlow_Implementation() override;
 	
-	UPROPERTY(EditAnywhere)
-	bool bDontGoToNode = false;
-public : 
-	FORCEINLINE bool DontGoToNode() { return bDontGoToNode; }
-		
-	UPROPERTY(EditAnywhere, Category= Default)
-	bool Is_EndNode;
-	UPROPERTY(EditAnywhere,Category= Default)
-	FName LevelName;
+public :
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
-	int CurrentLevelNo;
+	bool Is_EndNode;
+	UPROPERTY(EditAnywhere, Category=Default, meta=(EditCondition="Is_EndNode"))
+	FName LevelName;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void GetCompletedLevel();
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool bStopBeforeUnits;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="bStopBeforeUnits"))
 	float UnitsBeforeStop = 100.0f;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool HiddenNode = false;
 	
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="HiddenNode"))
 	AActor* HidingLocationActor;
+
+private:
+	UFUNCTION()
+	void GlowNode();
 	
 };
   

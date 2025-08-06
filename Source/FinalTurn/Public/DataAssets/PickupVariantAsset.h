@@ -8,7 +8,6 @@
 #include "PickupVariantAsset.generated.h"
 
 class APickup;
-class AThrowableItem;
 
 USTRUCT(BlueprintType)
 struct FPickupVariantData
@@ -20,12 +19,6 @@ struct FPickupVariantData
 
 	UPROPERTY(EditAnywhere)
 	EEquipState EquipState; 
-
-	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<APickup> PickupClass;
-
-	UPROPERTY(EditAnywhere)
-	TSoftClassPtr<AThrowableItem> ThrowableClass;
 
 	UPROPERTY(EditAnywhere)
 	FName SocketName; 

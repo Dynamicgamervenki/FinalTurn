@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "Pickups/Pickup.h"
 #include "Pickups/PickupType.h"
 #include "PickupInterface.generated.h"
 
@@ -26,12 +25,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetDetectedByEnemy(bool bDetected);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	bool GetIsHiding();
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void SetIsHiding(bool isHiding);
-	
-	TArray<APickup*> Pickups;
-
-	FORCEINLINE void AddToPickupArray(APickup* Pickup) {Pickups.Add(Pickup);}
-
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	bool GetIsHiding();
 };

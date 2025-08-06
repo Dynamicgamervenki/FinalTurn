@@ -5,6 +5,7 @@
 #include "Characters/Player/Zack.h"
 #include "Components/SphereComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
+#include "Pickups/Pickup.h"
 
 ABreakableActor::ABreakableActor()
 {
@@ -12,6 +13,8 @@ ABreakableActor::ABreakableActor()
 	GeometryCollection = CreateDefaultSubobject<UGeometryCollectionComponent>("GeometryCollection");
 	SetRootComponent(GeometryCollection);
 	GeometryCollection->SetGenerateOverlapEvents(true);
+	GeometryCollection->SetNotifyBreaks(true);
+	GeometryCollection->OnChaosBreakEvent.AddDynamic(this,&ABreakableActor::OnGeometryCollectionBreak);
 
 	SphereCollision = CreateDefaultSubobject<USphereComponent>("BoxComponent");
 	SphereCollision->SetupAttachment(GeometryCollection);
@@ -36,6 +39,15 @@ void ABreakableActor::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 			Zack->BreakableActor = this;
 			Zack->HeavyDynamiteSpawnLocation = HeavydynamitePlacingPositionActor->GetActorLocation();
 			Zack->PlayPlacignHeavyDynamiteMontage();
+		}
+	}
+	else if (APickup* Pickup = Cast<APickup>(OtherActor))
+	{
+		Hit++;
+		if (Hit == AmountToGetDestoryed)
+		{
+			Pickup->Field(GetActorLocation());	
+			SetLifeSpan(3.0f);
 		}
 	}
 }
@@ -64,6 +76,23 @@ void ABreakableActor::Interact_Implementation(AActor* Interactor)
 	}
 }
 
+void ABreakableActor::Glow_Implementation()
+{
+	GeometryCollection->SetRenderCustomDepth(true);
+	GeometryCollection->SetCustomDepthStencilValue(1);
+}
+
+void ABreakableActor::ResetGlow_Implementation()
+{
+	GeometryCollection->SetRenderCustomDepth(false);
+	GeometryCollection->SetCustomDepthStencilValue(0);
+}
+
+void ABreakableActor::OnGeometryCollectionBreak(const FChaosBreakEvent& BreakEvent)
+{
+	GeometryCollection->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
+	SetLifeSpan(1.0f);
+}
 
 FVector ABreakableActor::InteractPosition_Implementation()
 {

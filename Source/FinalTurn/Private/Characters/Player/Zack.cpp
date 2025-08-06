@@ -8,13 +8,12 @@
 #include "Characters/Enemies/EnemyBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Pickups/Pickup.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/InteractInterface.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Pickups/Stone.h"
-#include "Pickups/ThrowableItem.h"
 #include "Components/PawnNoiseEmitterComponent.h"
 #include "DataAssets/PickupVariantAsset.h"
 
@@ -73,6 +72,11 @@ void AZack::Tick(float DeltaTime)
 	PrintOutData();
 }
 
+void AZack::AddPickUpItem(APickup* Pickup)
+{
+	PickupActors.Add(Pickup);
+}
+
 void AZack::OnInteract()
 {
 	FHitResult Hit;
@@ -85,6 +89,7 @@ void AZack::OnInteract()
 		{
 			GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Yellow,FString::Printf(TEXT("HitActor Implements InteractInterface")));
 			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
+			HitImpactLocation = Hit.Location;
 			PerformEquipStateAction(EquipState,MoveLocation,Hit.GetActor());
 		}
 		else if(ACharacter* Enemy = Cast<ACharacter>(Hit.GetActor()))
@@ -103,22 +108,22 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 		IInteractInterface::Execute_Interact(HitActor,this);
 		break;
 	case EEquipState::Stone:
-		DoThrowEquipItem(InteractLocation,HitActor);
+		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::Grenade:
-		DoThrowEquipItem(InteractLocation,HitActor);
+		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::Dynamite:
-		DoThrowEquipItem(InteractLocation,HitActor);
+		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::HeavyDynamite: 
 		IInteractInterface::Execute_Interact(HitActor,this);
 		break;
 	case EEquipState::LavaCrystal: 
-		DoThrowEquipItem(InteractLocation,HitActor);
+		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::LavaOrb: 
-		DoThrowEquipItem(InteractLocation,HitActor);
+		ThrowEquippedItem(InteractLocation,HitActor,true);
 		break;
 	}
 }
@@ -126,34 +131,32 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 void AZack::Equip(EPickupType Pickup)
 {
 	UPickupVariantAsset* VariantAsset = PickupVariantMap.FindRef(Pickup);
-	if (!VariantAsset || !VariantAsset->PickupData.PickupClass.IsValid())
+	if (!VariantAsset)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("Invalid Variant Asset or PickupClass"));
 		return;
 	}
 
 	FPickupVariantData Data = VariantAsset->PickupData;
-	EquipPickUp(Data);
+	EquipPickupFromInventory(Data);
 }
 
-void AZack::EquipPickUp(FPickupVariantData PickupData)
+void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 {
-	TSoftClassPtr<APickup> InPickUpClass = PickupData.PickupClass;
 	FName SocketName = PickupData.SocketName;
 	EEquipState InEquipState = PickupData.EquipState;
-	TSoftClassPtr<AThrowableItem> SoftThrowableClass = PickupData.ThrowableClass;
-
-	if (EquipState == InEquipState || !InPickUpClass.IsValid())
+	
+	if (EquipState == InEquipState)
 	{
-		GEngine->AddOnScreenDebugMessage(50, 2.0f, FColor::Green, TEXT("EquipState "));
-		EquipState = EEquipState::None;
-			
 		if (EquippedItem)
 		{
-			EquippedItem->Destroy();
+			GEngine->AddOnScreenDebugMessage(558, 5.0f, FColor::Green, TEXT("Unequipped"));
+			EquippedItem->SetActorLocation(FVector(0, 0, 0));
+			EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 			EquippedItem = nullptr;
+			DisableHighlightEffect();
 		}
-	
+		EquipState = EEquipState::None;
 		return;
 	}
 
@@ -163,48 +166,35 @@ void AZack::EquipPickUp(FPickupVariantData PickupData)
 		EquipState = EEquipState::None;
 		return;
 	}
-
-	GEngine->AddOnScreenDebugMessage(53, 2.0f, FColor::Green, TEXT("Aync Abt To Start"));
 	
-	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
-	Streamable.RequestAsyncLoad(
-		InPickUpClass.ToSoftObjectPath(),
-		FStreamableDelegate::CreateUObject(
-			this, &AZack::OnPickupClassLoaded, InPickUpClass, SocketName, InEquipState
-		)
-	);
-	
-	if (!SoftThrowableClass.IsValid())
+	HighlightNearByNodes();
+	APickup* Pickup = nullptr;
+	for (APickup* pickup : PickupActors)
 	{
-		Streamable.RequestAsyncLoad(
-			SoftThrowableClass.ToSoftObjectPath(),
-			FStreamableDelegate(),
-			0,
-			false,
-			false,
-			FString::Printf(TEXT("Preloading Throwable for %s"), *UEnum::GetValueAsString(InEquipState))
-		);
+		if (pickup && pickup->PickupType == PickupData.PickupType)
+		{
+			Pickup = pickup;
+			break;
+		}
 	}
+	if (!Pickup)
+	{
+		GEngine->AddOnScreenDebugMessage(58, 2.0f, FColor::Green, TEXT("Cannot Find The Equip Pickup in PickupArray"));
+		return;
+	}
+	HandlePickupEquipped(Pickup,SocketName, InEquipState);
 }
 
-void AZack::OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState)
+void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState)
 {
-	if (!LoadedClass.IsValid()) return;
-
-	UClass* ActualClass = LoadedClass.Get();
-	FVector SocketLocation = GetMesh()->GetSocketLocation(SocketName);
-	FRotator SocketRotation = GetMesh()->GetSocketRotation(SocketName);
-
-	APickup* Pickup = GetWorld()->SpawnActor<APickup>(ActualClass, SocketLocation, SocketRotation);
-	if (!Pickup) return;
-
 	Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	Pickup->ItemMesh->SetRenderCustomDepth(true);
+	Pickup->ItemMesh->SetCustomDepthStencilValue(1);
 	SetEquippedItem(Pickup);
 
 	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
 	PlayAnimMontages(EquipStoneMontage);
 	Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
-
 	EquipState = InEquipState;
 }
 
@@ -230,6 +220,51 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 	}
 }
 
+void AZack::PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass)
+{
+	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+	Streamable.RequestAsyncLoad(
+		pickupClass.ToSoftObjectPath(),
+		FStreamableDelegate::CreateUObject(
+			this,&AZack::PickupAsyncLoaded,pickupClass
+		)
+	);
+}
+
+
+void AZack::PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup)
+{
+	UClass* LoadedUClass = loadedPickup.Get(); 
+	if (!LoadedUClass) 
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to get UClass for pickup!"));
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+
+	FVector SpawnLocation = FVector::ZeroVector;
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+	APickup* pickup = GetWorld()->SpawnActor<APickup>(
+		LoadedUClass,
+		SpawnLocation,
+		SpawnRotation,
+		SpawnParams
+	);
+	if (pickup)
+	{
+		pickup->SetActorEnableCollision(false);
+		pickup->SetActorScale3D(FVector(2, 2, 2));
+		AddPickUpItem(pickup);
+	}
+}
+
+
+
 void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
@@ -243,16 +278,15 @@ void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 		PreviousNodeLocation = GetActorLocation();
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), OffSet);
 		IsMoving = true;
-	//	CanClickNode = false;
 	}
 }
 
-void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
+void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreDistance)
 {
 	if (Dest.ContainsNaN())
 		return;
 	
-	if (!CanClickOnNode(Dest))
+	if (!CanClickOnNode(Dest,IgnoreDistance))
 	{
 		GEngine->AddOnScreenDebugMessage(16, 2, FColor::Red, "TRYING TO THROW AT DISTANCE > 500");
 		return;
@@ -266,12 +300,13 @@ void AZack::DoThrowEquipItem(const FVector& Dest, AActor* HitActor)
 
 		if (EquippedItem)
 		{
-			EquippedItem->Destroy();
+			EquippedItem->SetActorLocation(FVector(0, 0, 0));
+			EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			EquippedItem = nullptr;
 		}
 		return;
 	}
-
-	// Proceed with throw
+	
 	CanClickNode = false;
 	FRotator LookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Dest);
 	SetActorRotation(LookRotator);
@@ -292,74 +327,38 @@ void AZack::AmmoUpdateBroadCast(EPickupType type, int Ammo)
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
 	if (NotifyName != "Throw") return;
-	TSoftClassPtr<AThrowableItem> SoftThrowableClass;
-	
-	switch (EquipState)
-	{
-	case EEquipState::Stone:
-		SoftThrowableClass = ThrowableStoneClass;
-		break;
-	case EEquipState::Grenade:
-		SoftThrowableClass = ThrowableGrenadeClass;
-		break;
-	case EEquipState::Dynamite:
-		SoftThrowableClass = ThrowableDynamiteClass;
-		break;
-	case EEquipState::HeavyDynamite:
-		SoftThrowableClass = ThrowableHeavyDynamiteClass;
-		break;
-	case EEquipState::LavaCrystal:
-		SoftThrowableClass = ThrowableLavaCrystalClass;
-		break;
-	case EEquipState::LavaOrb:
-		SoftThrowableClass = ThrowableLavaOrbClass;
-		break;
-		
-	default:
-		return;
-	}
-	
-	if (SoftThrowableClass.IsValid())
-	{
-		OnThrowableLoaded(SoftThrowableClass);
-		GEngine->AddOnScreenDebugMessage(15,1,FColor::Red,SoftThrowableClass.ToString());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Throwable class was not loaded at throw time — preload may have failed."));
-	}
+
+	DisableHighlightEffect();
+	OnThrowableLoaded();
 }
 
 
-void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
+void AZack::OnThrowableLoaded()
 {
-	if (!LoadedClass.IsValid()) return;
+	if (!EquippedItem) return;
 
-	UClass* ActualClass = LoadedClass.Get();
-	if (!ActualClass || !GetWorld()) return;
-
-	if (EquippedItem)
-	{
-		EquippedItem->Destroy();
-	}
-
-	FVector SocketLocation = GetMesh()->GetSocketLocation("Stone_Socket");
-	FRotator SocketRotation = GetMesh()->GetSocketRotation("Stone_Socket");
-
-	AThrowableItem* SpawnedItem = GetWorld()->SpawnActor<AThrowableItem>(ActualClass, SocketLocation, SocketRotation);
-	if (!SpawnedItem || !SpawnedItem->SM_Throwable) return;
-
+	double distance = UKismetMathLibrary::Vector_Distance(HitImpactLocation,GetActorLocation());
 	FVector ForwardVector = GetCapsuleComponent()->GetForwardVector();
-	FVector ScaledForward = ForwardVector * 500.0f;
+	FVector ScaledForward = ForwardVector * distance;
 	float ZValue = ForwardVector.Z;
 	float MappedZ = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(3.0f, 10.0f), ZValue);
 	float UpwardImpulse = MappedZ * 100.0f;
 	FVector FinalImpulse = ScaledForward + FVector(0.0f, 0.0f, UpwardImpulse);
 
-	SpawnedItem->SM_Throwable->SetMassOverrideInKg(NAME_None, 1.0f, true);
-	SpawnedItem->SM_Throwable->AddImpulse(FinalImpulse);
-
-	SpawnedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
+	EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	EquippedItem->ItemMesh->SetSimulatePhysics(true);
+	EquippedItem->ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	EquippedItem->ItemMesh->SetCollisionResponseToAllChannels(ECR_Block);
+	EquippedItem->ItemMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
+	EquippedItem->ItemMesh->SetMassOverrideInKg(NAME_None, 1.0f, true);
+	EquippedItem->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	EquippedItem->Sphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	EquippedItem->ItemMesh->AddImpulse(FinalImpulse);
+	PickupActors.Remove(EquippedItem);
+	EquippedItem->Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	EquippedItem = nullptr;
+	
+	//EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
 	
 	// Deduct ammo
 	switch (EquipState)
@@ -376,6 +375,7 @@ void AZack::OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass)
 	CanClickNode = true;
 	EquipState = EEquipState::None;
 }
+
 
 void AZack::HandleThrowableImpact(AActor* HitActor)
 {
@@ -503,8 +503,8 @@ void AZack::PlayAnimMontageInReverse(UAnimMontage* MontageToPlay)
 	}
 }
 
-bool AZack::CanClickOnNode(const FVector& Dest)
+bool AZack::CanClickOnNode(const FVector& Dest,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
-	return (distance <= moveDistance  && distance > 100.0f);
+	return (distance <= moveDistance  && distance > 100.0f || IgnoreDistance);
 }

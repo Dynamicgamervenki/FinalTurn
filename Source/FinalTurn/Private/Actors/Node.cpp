@@ -42,11 +42,6 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 			UGameplayStatics::OpenLevel(this,LevelName);
 			GetCompletedLevel();
 		}
-		// else if (HiddenNode)
-		// {
-		// 	GEngine->AddOnScreenDebugMessage(112, 5.f, FColor::Yellow, TEXT("Hidden Node"));
-		// 	Zack->DoMoveTo(HidingLocation);
-		// }
 		GEngine->AddOnScreenDebugMessage(-12, 2.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
 		Zack->IsMoving = false;
 		Zack->CanClickNode = true;
@@ -97,4 +92,21 @@ void ANode::Interact_Implementation(AActor* Interactor)
 			Zack->DoMoveTo(MoveToLocation);
 		}
 	}
+}
+
+void ANode::Glow_Implementation()
+{
+	GlowNode();
+}
+
+void ANode::ResetGlow_Implementation()
+{
+	SM_Node->SetRenderCustomDepth(false);
+	SM_Node->SetCustomDepthStencilValue(0);
+}
+
+void ANode::GlowNode()
+{
+	SM_Node->SetRenderCustomDepth(true);
+	SM_Node->SetCustomDepthStencilValue(1);
 }

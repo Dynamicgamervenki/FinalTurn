@@ -60,15 +60,16 @@ public:
     bool GotDetectedByEnemy = false;
     
     // --- Inline Setters for Pickup Items ---
-    FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped; }
+    FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped;}
 
     UFUNCTION()
     void DoMoveTo(const FVector& Dest,float Offset = 20,bool IgnoreDistance = false);
     
     // --- Internal State ---
+    UPROPERTY(BlueprintReadWrite)
     EEquipState EquipState = EEquipState::None;
-    void DoThrowEquipItem(const FVector& Dest,AActor* HitActor);
-
+    void ThrowEquippedItem(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
+    
     void PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor);
 
     UFUNCTION(BlueprintCallable)
@@ -86,12 +87,17 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Breakable")
     AActor* BreakableActor;
 
+    UPROPERTY(VisibleInstanceOnly,BlueprintReadWrite,Category = Default)
+    TArray<APickup*> PickupActors;
+    
+    UFUNCTION(BlueprintCallable)
+    void AddPickUpItem(APickup* Pickup);
+    
 protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
     UFUNCTION(BlueprintCallable) void Equip(EPickupType Pickup);
-    UFUNCTION() void EquipPickUp(FPickupVariantData PickupData);
-    
+    UFUNCTION() void EquipPickupFromInventory(FPickupVariantData PickupData);
     // --- Debug/Utility ---
     UFUNCTION()
     void PrintOutData();
@@ -115,7 +121,7 @@ protected:
     // --- Pickup Items ---
     UPROPERTY(VisibleAnywhere, Category = "Combat")
     APickup* PickupItem;
-    UPROPERTY(VisibleAnywhere, Category = "Combat")
+    UPROPERTY(BlueprintReadWrite, Category = "Combat")
     APickup* EquippedItem;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 StoneCount;
@@ -129,25 +135,7 @@ protected:
     int32 LavaCrystalCount;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 LavaOrbCount;
-
-    // --- Projectile Classes ---
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableStoneClass;
-
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableGrenadeClass;
-
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableDynamiteClass;
     
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableHeavyDynamiteClass;
-    
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableLavaCrystalClass;
-
-    UPROPERTY(EditAnywhere)
-    TSoftClassPtr<AThrowableItem> ThrowableLavaOrbClass;
     
     // --- Animation Montages ---
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
@@ -160,10 +148,12 @@ protected:
     UAnimMontage* PlaceHeavyDynamiteMontage;
 
     UFUNCTION(BlueprintCallable)
-    bool CanClickOnNode(const FVector &Dest);
-
+    bool CanClickOnNode(const FVector &Dest,bool IgnoreDistance = false);
+    
     UPROPERTY(BlueprintReadWrite)
     FVector MoveLocation;
+    UPROPERTY(BlueprintReadWrite)
+    FVector HitImpactLocation;
     
     UFUNCTION(BlueprintImplementableEvent)
     void PlayInteractionSound(FVector Location);
@@ -171,6 +161,14 @@ protected:
     UPROPERTY(EditAnywhere, Category="Pickup Variants")
     TMap<EPickupType, UPickupVariantAsset*> PickupVariantMap;
 
+    UFUNCTION(BlueprintImplementableEvent)
+    void HighlightNearByNodes();
+    UFUNCTION(BlueprintImplementableEvent)
+    void DisableHighlightEffect();
+
+    UFUNCTION(BlueprintCallable)
+    void PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass);
+    
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);
@@ -185,8 +183,10 @@ private:
     UFUNCTION()
     bool HasAmmoForEquipState(EEquipState State);
     UFUNCTION()
-    void OnPickupClassLoaded(TSoftClassPtr<APickup> LoadedClass, FName SocketName, EEquipState InEquipState);
+    void HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState);
     UFUNCTION()
-    void OnThrowableLoaded(TSoftClassPtr<AThrowableItem> LoadedClass);
+    void OnThrowableLoaded();
+    UFUNCTION()
+    void PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup);
     
 };

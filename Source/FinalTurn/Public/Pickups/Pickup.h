@@ -7,6 +7,11 @@
 #include "Pickups/PickupType.h"
 #include "Pickup.generated.h"
 
+class UFieldSystemComponent;
+class URadialVector;
+class UFieldSystemMetaData;
+class URadialFalloff;
+class URadialVector;
 class USphereComponent;
 
 UCLASS()
@@ -22,13 +27,13 @@ protected:
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-	UFUNCTION()
-	virtual  void OnSphereEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	//UFUNCTION()
+	//virtual  void OnSphereEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 public:	
 	virtual void Tick(float DeltaTime) override;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
 	UStaticMeshComponent* ItemMesh;
 
 	UPROPERTY(VisibleAnywhere)
@@ -42,5 +47,16 @@ public:
 
 	UPROPERTY(EditInstanceOnly,BlueprintReadWrite)
 	int PickupAmount = 0;
+	
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<URadialFalloff> RadialFalloff;
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<UFieldSystemMetaData> FieldSystemMetaDataFilter;
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<URadialVector> RadialVector;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void Field(FVector Location);
+	UFUNCTION(BlueprintCallable)
+	void ActivateField(FVector Location);
 };
