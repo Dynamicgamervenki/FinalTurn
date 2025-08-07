@@ -53,11 +53,16 @@ private:
 	UGeometryCollectionComponent* GeometryCollection;
 	int Hit = 0;
 
+	UFUNCTION()
+	void HandleZackOverlap(AZack* Zack);
+	UFUNCTION()
+	void HandlePickupOverlap(APickup* Pickup);
+
 
 public:
 	FORCEINLINE bool ShouldPlaceHeavyDynamiteOnClick() const{ return bPlaceHeavyDynamiteOnClick; }
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Breakable)
-	EPickupType DestoroyablePickup;
+	TArray<EPickupType> DestoroyablePickup;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Breakable)
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bStopBeforeUnits"))

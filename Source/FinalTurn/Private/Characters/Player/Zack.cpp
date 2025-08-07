@@ -167,7 +167,6 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 		return;
 	}
 	
-	HighlightNearByNodes();
 	APickup* Pickup = nullptr;
 	for (APickup* pickup : PickupActors)
 	{
@@ -182,6 +181,7 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 		GEngine->AddOnScreenDebugMessage(58, 2.0f, FColor::Green, TEXT("Cannot Find The Equip Pickup in PickupArray"));
 		return;
 	}
+	HighlightNearByNodes();
 	HandlePickupEquipped(Pickup,SocketName, InEquipState);
 }
 
@@ -218,6 +218,11 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 	default:
 		return false;
 	}
+}
+
+void AZack::InvokeDisableHiglightEffectThroughBp()
+{
+	DisableHighlightEffect();
 }
 
 void AZack::PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass)
@@ -257,8 +262,8 @@ void AZack::PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup)
 	);
 	if (pickup)
 	{
-		pickup->SetActorEnableCollision(false);
 		pickup->SetActorScale3D(FVector(2, 2, 2));
+		pickup->Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		AddPickUpItem(pickup);
 	}
 }
@@ -346,14 +351,20 @@ void AZack::OnThrowableLoaded()
 	FVector FinalImpulse = ScaledForward + FVector(0.0f, 0.0f, UpwardImpulse);
 
 	EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	EquippedItem->ItemMesh->SetSimulatePhysics(true);
-	EquippedItem->ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	//EquippedItem->SetActorEnableCollision(true);
+	
 	EquippedItem->ItemMesh->SetCollisionResponseToAllChannels(ECR_Block);
 	EquippedItem->ItemMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
-	EquippedItem->ItemMesh->SetMassOverrideInKg(NAME_None, 1.0f, true);
+	EquippedItem->ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	
 	EquippedItem->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	EquippedItem->Sphere->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	
+	EquippedItem->ItemMesh->SetSimulatePhysics(true);
+	EquippedItem->ItemMesh->SetMassOverrideInKg(NAME_None, 1.0f, true);
 	EquippedItem->ItemMesh->AddImpulse(FinalImpulse);
+	
 	PickupActors.Remove(EquippedItem);
 	EquippedItem->Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	EquippedItem = nullptr;

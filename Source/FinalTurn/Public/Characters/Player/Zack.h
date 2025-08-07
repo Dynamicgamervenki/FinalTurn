@@ -165,6 +165,8 @@ protected:
     void HighlightNearByNodes();
     UFUNCTION(BlueprintImplementableEvent)
     void DisableHighlightEffect();
+    UFUNCTION(BlueprintCallable)
+    void InvokeDisableHiglightEffectThroughBp();
 
     UFUNCTION(BlueprintCallable)
     void PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass);

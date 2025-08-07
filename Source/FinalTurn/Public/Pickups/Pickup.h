@@ -38,6 +38,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent* Sphere;
+	
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* PulseEffect;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayPickUpSound(FVector Location);

@@ -20,11 +20,13 @@ public:
 	TObjectPtr<UStaticMeshComponent> SM_Node;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TObjectPtr<UBoxComponent> Box;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	TObjectPtr<UStaticMeshComponent> SM_Ring;
 
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-	
+	virtual void OnConstruction(const FTransform& Transform) override;
 	
 	UFUNCTION()
 	virtual void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
@@ -54,6 +56,9 @@ public :
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool HiddenNode = false;
+	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	FLinearColor Color = FLinearColor::White;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="HiddenNode"))
 	AActor* HidingLocationActor;

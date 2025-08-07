@@ -4,8 +4,8 @@
 #include "Pickups/Pickup.h"
 #include "Components/SphereComponent.h"
 #include "Characters/Player/Zack.h"
-#include "Field/FieldSystemComponent.h"
 #include "Field/FieldSystemObjects.h"
+#include "Particles/ParticleSystemComponent.h"
 
 APickup::APickup()
 {
@@ -18,6 +18,10 @@ APickup::APickup()
 
 	Sphere = CreateDefaultSubobject<USphereComponent>("Sphere");
 	Sphere->SetupAttachment(RootComponent);
+
+	PulseEffect = CreateDefaultSubobject<UParticleSystemComponent>("PulseRingEffect");
+	PulseEffect->SetWorldScale3D(FVector(0.02));
+	PulseEffect->SetupAttachment(RootComponent);
 	
 	RadialFalloff = CreateDefaultSubobject<URadialFalloff>(TEXT("RadialFalloff"));
 	FieldSystemMetaDataFilter = CreateDefaultSubobject<UFieldSystemMetaData>(TEXT("FieldSystemMetaDataFilter"));
@@ -37,6 +41,7 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 {
 	if (AZack* Zack = Cast<AZack>(OtherActor))
 	{
+		PulseEffect->SetVisibility(false);
 		PlayPickUpSound(GetActorLocation());
 		this->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -46,7 +51,7 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	else
 	{
 		//SetActorHiddenInGame(true);
-		SetLifeSpan(2.0f);
+		SetLifeSpan(1.5f);
 	}
 	
 }

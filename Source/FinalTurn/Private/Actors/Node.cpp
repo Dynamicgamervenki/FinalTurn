@@ -18,6 +18,12 @@ ANode::ANode()
 	Box->SetupAttachment(GetRootComponent());
 	Box->OnComponentBeginOverlap.AddDynamic(this,&ANode::OnBoxOverlap);
 //	Box->OnComponentEndOverlap.AddDynamic(this,&ANode::OnBoxEndOverlap);
+
+	SM_Ring = CreateDefaultSubobject<UStaticMeshComponent>("FinalNodeRing");
+	SM_Ring->SetGenerateOverlapEvents(false);
+	SM_Ring->SetHiddenInGame(false);
+	SM_Ring->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SM_Ring->SetupAttachment(GetRootComponent());
 }
 
 
@@ -53,6 +59,27 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 // {
 // 	
 // }
+
+void ANode::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (!SM_Ring) return;
+	
+	SM_Ring->SetVisibility(Is_EndNode);
+	SM_Ring->SetHiddenInGame(!Is_EndNode);
+
+
+	UMaterialInterface* CurrentMaterial = SM_Ring->GetMaterial(0);
+	if (!CurrentMaterial) return;
+
+	UMaterialInstanceDynamic* MaterialInstance = SM_Ring->CreateDynamicMaterialInstance(0, CurrentMaterial);
+	if (MaterialInstance)
+	{
+		MaterialInstance->SetVectorParameterValue("Color", Color);
+	}
+
+}
 
 FVector ANode::InteractPosition_Implementation()
 {
