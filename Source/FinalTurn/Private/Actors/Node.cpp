@@ -64,8 +64,21 @@ void ANode::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
+	if (!SM_Ring) return;
+	
 	SM_Ring->SetVisibility(Is_EndNode);
 	SM_Ring->SetHiddenInGame(!Is_EndNode);
+
+
+	UMaterialInterface* CurrentMaterial = SM_Ring->GetMaterial(0);
+	if (!CurrentMaterial) return;
+
+	UMaterialInstanceDynamic* MaterialInstance = SM_Ring->CreateDynamicMaterialInstance(0, CurrentMaterial);
+	if (MaterialInstance)
+	{
+		MaterialInstance->SetVectorParameterValue("Color", Color);
+	}
+
 }
 
 FVector ANode::InteractPosition_Implementation()

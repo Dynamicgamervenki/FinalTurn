@@ -57,6 +57,9 @@ public :
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool HiddenNode = false;
 	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	FLinearColor Color = FLinearColor::White;
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="HiddenNode"))
 	AActor* HidingLocationActor;
 
