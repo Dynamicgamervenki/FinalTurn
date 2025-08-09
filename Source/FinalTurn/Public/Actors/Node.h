@@ -59,6 +59,11 @@ public :
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	FLinearColor Color = FLinearColor::White;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool isGasNode = false;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool isGasNodeActivated = false;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="HiddenNode"))
 	AActor* HidingLocationActor;
