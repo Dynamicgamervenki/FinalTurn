@@ -7,6 +7,7 @@
 #include "Interfaces/InteractInterface.h"
 #include "Node.generated.h"
 
+class AZack;
 class UBoxComponent;
 
 UCLASS()
@@ -24,14 +25,13 @@ public:
 	TObjectPtr<UStaticMeshComponent> SM_Ring;
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
+	virtual void BeginPlay() override;	virtual void Tick(float DeltaTime) override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 	
 	UFUNCTION()
 	virtual void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-	// UFUNCTION()
-	// virtual  void OnBoxEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	 UFUNCTION()
+	virtual  void OnBoxEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	virtual FVector InteractPosition_Implementation() override;
 	virtual TArray<AActor*> GetOverlappingActorsOnNode_Implementation() override;
@@ -46,19 +46,28 @@ public :
 	UPROPERTY(EditAnywhere, Category=Default, meta=(EditCondition="Is_EndNode"))
 	FName LevelName;
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void GetCompletedLevel();
-
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="bStopBeforeUnits"))
 	float UnitsBeforeStop = 100.0f;
-
+	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool isTeleportNode;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="isTeleportNode"))
+	ANode* TeleportNode;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="isTeleportNode"))
+	ANode* PostTeleportNode;
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool HiddenNode = false;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	FLinearColor Color = FLinearColor::White;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool isGasNode = false;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool isGasNodeActivated = false;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="HiddenNode"))
 	AActor* HidingLocationActor;
@@ -66,6 +75,10 @@ public :
 private:
 	UFUNCTION()
 	void GlowNode();
+	UFUNCTION()
+	void HandleTeleportNode(AZack* Zack);
+	UFUNCTION()
+	void HandleFinalNodeTransition(AZack* Zack);
 	
 };
   
