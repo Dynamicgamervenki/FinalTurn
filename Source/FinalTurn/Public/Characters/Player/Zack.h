@@ -93,6 +93,10 @@ public:
     UFUNCTION(BlueprintCallable)
     void AddPickUpItem(APickup* Pickup);
     
+    UPROPERTY(BlueprintReadWrite)
+    bool bOnFinalNode;
+    
+    
 protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
@@ -154,7 +158,7 @@ protected:
     FVector MoveLocation;
     UPROPERTY(BlueprintReadWrite)
     FVector HitImpactLocation;
-    
+
     UFUNCTION(BlueprintImplementableEvent)
     void PlayInteractionSound(FVector Location);
     

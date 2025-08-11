@@ -46,17 +46,15 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 	{
 		if (Is_EndNode)
 		{
-			UGameplayStatics::OpenLevel(this,LevelName);
-			GetCompletedLevel();
+			HandleFinalNodeTransition(Zack);
 		}
 		else if (isTeleportNode)
 		{
 			HandleTeleportNode(Zack);
 		}
-		GEngine->AddOnScreenDebugMessage(-12, 2.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
-		Zack->IsMoving = false;
-		Zack->CanClickNode = true;
-		
+		// GEngine->AddOnScreenDebugMessage(-12, 2.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
+		// Zack->IsMoving = false;
+		// Zack->CanClickNode = true;
 	}
 }
 
@@ -155,9 +153,27 @@ void ANode::HandleTeleportNode(AZack* Zack)
 	DelayTimerHandle,
 	FTimerDelegate::CreateLambda([this]()
 	{
-		TeleportNode->Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		if (TeleportNode)
+			TeleportNode->Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	}),
 	1.0f,
+	false);
+}
+
+void ANode::HandleFinalNodeTransition(AZack* Zack)
+{
+	Zack->bOnFinalNode = true;
+	Zack->CanClickNode = false;
+	FTimerHandle DelayTimerHandle;
+	GetWorldTimerManager().SetTimer(
+	DelayTimerHandle,
+	FTimerDelegate::CreateLambda([this,Zack]()
+	{
+		UGameplayStatics::OpenLevel(this,LevelName);
+		Zack->CanClickNode = true;
+		Zack->bOnFinalNode = false;
+	}),
+	0.5f,
 	false);
 }
 

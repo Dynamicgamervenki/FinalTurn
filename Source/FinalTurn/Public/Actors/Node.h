@@ -46,9 +46,6 @@ public :
 	UPROPERTY(EditAnywhere, Category=Default, meta=(EditCondition="Is_EndNode"))
 	FName LevelName;
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void GetCompletedLevel();
-
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="bStopBeforeUnits"))
@@ -80,6 +77,8 @@ private:
 	void GlowNode();
 	UFUNCTION()
 	void HandleTeleportNode(AZack* Zack);
+	UFUNCTION()
+	void HandleFinalNodeTransition(AZack* Zack);
 	
 };
   
