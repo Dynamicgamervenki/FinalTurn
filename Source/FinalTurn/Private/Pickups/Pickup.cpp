@@ -51,6 +51,8 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	else
 	{
 		SetActorHiddenInGame(true);
+		//ItemMesh->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
+		//ItemMesh->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		SetLifeSpan(0.5f);
 	}
 	

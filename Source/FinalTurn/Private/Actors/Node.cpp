@@ -4,6 +4,7 @@
 #include "Actors/Node.h"
 #include "Characters/Player/Zack.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 ANode::ANode()
@@ -48,17 +49,22 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 			UGameplayStatics::OpenLevel(this,LevelName);
 			GetCompletedLevel();
 		}
+		else if (isTeleportNode)
+		{
+			HandleTeleportNode(Zack);
+		}
 		GEngine->AddOnScreenDebugMessage(-12, 2.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
 		Zack->IsMoving = false;
 		Zack->CanClickNode = true;
+		
 	}
 }
 
-// void ANode::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-// 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-// {
-// 	
-// }
+ void ANode::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+ 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+ {
+
+ }
 
 void ANode::OnConstruction(const FTransform& Transform)
 {
@@ -137,3 +143,21 @@ void ANode::GlowNode()
 	SM_Node->SetRenderCustomDepth(true);
 	SM_Node->SetCustomDepthStencilValue(1);
 }
+
+void ANode::HandleTeleportNode(AZack* Zack)
+{
+	FTimerHandle DelayTimerHandle;
+	TeleportNode->Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Zack->SetActorLocation(TeleportNode->GetActorLocation() + FVector(0,0,50.0f),false);
+	Zack->GetCharacterMovement()->StopMovementImmediately();
+	Zack->DoMoveTo(PostTeleportNode->GetActorLocation(),20,true);
+	GetWorldTimerManager().SetTimer(
+	DelayTimerHandle,
+	FTimerDelegate::CreateLambda([this]()
+	{
+		TeleportNode->Box->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}),
+	1.0f,
+	false);
+}
+
