@@ -11,7 +11,8 @@ enum class EPickupType : uint8
 	Dynamite UMETA(DisplayName = "Dynamite"),
 	HeavyDynamite UMETA(DisplayName = "HeavyDynamite"),
 	LavaCrystal UMETA(DisplayName = "LavaCrystal"),
-	LavaOrb UMETA(DisplayName = "LavaOrb")
+	LavaOrb UMETA(DisplayName = "LavaOrb"),
+	Gun UMETA(DisplayName = "ShotGun")
 };
 
 UENUM(BlueprintType)
@@ -23,6 +24,7 @@ enum class EEquipState : uint8
 	Dynamite UMETA(DisplayName = "Dynamite"),
 	HeavyDynamite UMETA(DisplayName = "HeavyDynamite"),
 	LavaCrystal UMETA(DisplayName = "LavaCrystal"),
-	LavaOrb UMETA(DisplayName = "LavaOrb")
+	LavaOrb UMETA(DisplayName = "LavaOrb"),
+	Gun UMETA(DisplayName = "ShotGun")
 };
 

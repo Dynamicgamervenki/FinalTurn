@@ -125,6 +125,8 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 	case EEquipState::LavaOrb: 
 		ThrowEquippedItem(InteractLocation,HitActor,true);
 		break;
+	case EEquipState::Gun:
+		ShootGun(InteractLocation,HitActor);
 	}
 }
 
@@ -215,6 +217,8 @@ bool AZack::HasAmmoForEquipState(EEquipState State)
 	     return LavaCrystalCount > 0;
 	case EEquipState::LavaOrb:
 	     return LavaOrbCount > 0;
+	case EEquipState::Gun:
+		 return BulletCount > 0;
 	default:
 		return false;
 	}
@@ -316,6 +320,11 @@ void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreD
 	FRotator LookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Dest);
 	SetActorRotation(LookRotator);
 	PlayAnimMontages(ThrowMontage);
+}
+
+void AZack::ShootGun(const FVector& Dest, AActor* HitActor, bool IgnoreDistance)
+{
+	//Shooting Logic
 }
 
 void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
@@ -508,8 +517,8 @@ void AZack::PlayAnimMontageInReverse(UAnimMontage* MontageToPlay)
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && MontageToPlay)
 	{
-		AnimInstance->Montage_Play(MontageToPlay, -1.f);
 		float MontageLength = MontageToPlay->GetPlayLength();
+		AnimInstance->Montage_Play(MontageToPlay, -1.f);
 		AnimInstance->Montage_SetPosition(MontageToPlay, MontageLength);
 	}
 }

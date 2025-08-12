@@ -69,6 +69,9 @@ public:
     UPROPERTY(BlueprintReadWrite)
     EEquipState EquipState = EEquipState::None;
     void ThrowEquippedItem(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
+
+    UFUNCTION()
+    void ShootGun(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
     
     void PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor);
 
@@ -139,6 +142,8 @@ protected:
     int32 LavaCrystalCount;
     UPROPERTY(BlueprintReadWrite, Category = "Pickups")
     int32 LavaOrbCount;
+    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
+    int32 BulletCount;
     
     
     // --- Animation Montages ---
@@ -150,6 +155,9 @@ protected:
     UAnimMontage* StealthMontage;
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* PlaceHeavyDynamiteMontage;
+    UPROPERTY(EditDefaultsOnly, Category = "Montages")
+    UAnimMontage* DrawShotGunMontage;
+    
 
     UFUNCTION(BlueprintCallable)
     bool CanClickOnNode(const FVector &Dest,bool IgnoreDistance = false);
