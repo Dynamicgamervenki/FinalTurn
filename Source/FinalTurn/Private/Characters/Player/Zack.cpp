@@ -110,7 +110,7 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 	case EEquipState::Stone:
 		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
-	case EEquipState::Grenade:
+	case EEquipState::Granade:
 		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::Dynamite:
@@ -147,6 +147,7 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 {
 	FName SocketName = PickupData.SocketName;
 	EEquipState InEquipState = PickupData.EquipState;
+	CurrentPickupType = PickupData.PickupType;
 	
 	if (EquipState == InEquipState)
 	{
@@ -159,6 +160,7 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 			DisableHighlightEffect();
 		}
 		EquipState = EEquipState::None;
+		CurrentPickupType = EPickupType::None;
 		return;
 	}
 
@@ -166,6 +168,7 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 	{
 		GEngine->AddOnScreenDebugMessage(51, 2.0f, FColor::Green, TEXT("HasNoAmmo"));
 		EquipState = EEquipState::None;
+		CurrentPickupType = EPickupType::None;
 		return;
 	}
 	
@@ -203,25 +206,9 @@ void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState I
 
 bool AZack::HasAmmoForEquipState(EEquipState State)
 { 
-	switch (State)
-	{
-	case EEquipState::Stone:
-		return StoneCount > 0;
-	case EEquipState::Grenade:
-		return GranadeCount > 0;
-	case EEquipState::Dynamite:
-		return DynamiteCount > 0;
-	case EEquipState::HeavyDynamite:
-	     return HeavyDynamiteCount > 0;
-	case EEquipState::LavaCrystal:
-	     return LavaCrystalCount > 0;
-	case EEquipState::LavaOrb:
-	     return LavaOrbCount > 0;
-	case EEquipState::Gun:
-		 return BulletCount > 0;
-	default:
-		return false;
-	}
+	EPickupType PickupType = (EPickupType)State;
+	const int32* Count = PickupCounts.Find(PickupType);
+	return (Count && *Count > 0);
 }
 
 void AZack::InvokeDisableHiglightEffectThroughBp()
@@ -322,10 +309,7 @@ void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreD
 	PlayAnimMontages(ThrowMontage);
 }
 
-void AZack::ShootGun(const FVector& Dest, AActor* HitActor, bool IgnoreDistance)
-{
-	//Shooting Logic
-}
+
 
 void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
 {
@@ -381,19 +365,10 @@ void AZack::OnThrowableLoaded()
 	//EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
 	
 	// Deduct ammo
-	switch (EquipState)
-	{
-	case EEquipState::Stone:   StoneCount--; OnPickupUpdated.Broadcast(EPickupType::Stone, StoneCount); break;
-	case EEquipState::Grenade: GranadeCount--; OnPickupUpdated.Broadcast(EPickupType::Granade, GranadeCount); break;
-	case EEquipState::Dynamite: DynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::Dynamite, DynamiteCount); break;
-	case EEquipState::HeavyDynamite: HeavyDynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::HeavyDynamite, HeavyDynamiteCount); break;
-	case EEquipState::LavaCrystal: LavaCrystalCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaCrystalCount); break;
-	case EEquipState::LavaOrb : LavaOrbCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaOrbCount); break;
-	default: break;
-	}
-
+	UpdateInventoryAmmo(CurrentPickupType,-1);
 	CanClickNode = true;
 	EquipState = EEquipState::None;
+	CurrentPickupType = EPickupType::None;
 }
 
 
@@ -410,36 +385,21 @@ void AZack::HandleThrowableImpact(AActor* HitActor)
 
 void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
 {
-	int32 NewAmount = 0;
-	
-	switch (PickupType)
+	int32& CurrentAmount = PickupCounts.FindOrAdd(PickupType);
+	CurrentAmount += Amount;
+
+	OnPickupUpdated.Broadcast(PickupType, CurrentAmount);
+}
+
+void AZack::UpdateInventoryAmmo(EPickupType PickupType, int32 Amount)
+{
+	if (PickupCounts.Contains(PickupType))
 	{
-	case EPickupType::Stone:
-		StoneCount += Amount;
-		NewAmount = StoneCount;
-		break;
-	case EPickupType::Granade:
-		GranadeCount += Amount;
-		NewAmount = GranadeCount;
-		break;
-	case EPickupType::Dynamite:
-		DynamiteCount += Amount;
-		NewAmount = DynamiteCount;
-		break;
-	case EPickupType::HeavyDynamite:
-		HeavyDynamiteCount += Amount;
-		NewAmount = HeavyDynamiteCount;
-		break;
-	case EPickupType::LavaCrystal:
-		LavaCrystalCount += Amount;
-		NewAmount = LavaCrystalCount;
-		break;
-	case EPickupType::LavaOrb:
-		LavaOrbCount += Amount;
-		NewAmount = LavaOrbCount;
-		break;
-	};
-	OnPickupUpdated.Broadcast(PickupType,NewAmount);
+		int32& CurrentAmount = PickupCounts[PickupType];
+		CurrentAmount += Amount;
+		CurrentAmount = FMath::Clamp(CurrentAmount, 0.0f, INT_MAX);
+		OnPickupUpdated.Broadcast(PickupType, CurrentAmount);
+	}
 }
 
 void AZack::SetDetectedByEnemy_Implementation(bool bDetected)
@@ -466,18 +426,6 @@ void AZack::PrintOutData()
 {
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(8, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Stones: %d"), StoneCount));
-		GEngine->AddOnScreenDebugMessage(10, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Grenades: %d"), GranadeCount));
-		GEngine->AddOnScreenDebugMessage(11, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Dynamite: %d"), DynamiteCount));
-		GEngine->AddOnScreenDebugMessage(12, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("HeavyDynamite: %d"), HeavyDynamiteCount));
-		GEngine->AddOnScreenDebugMessage(13, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("LavaCrystal: %d"), LavaCrystalCount));
-		GEngine->AddOnScreenDebugMessage(14, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("LavaOrb: %d"), LavaOrbCount));
 		GEngine->AddOnScreenDebugMessage(15, 2.0f, FColor::Yellow,
 	FString::Printf(TEXT("CanClickNode: %s"), CanClickNode ? TEXT("true") : TEXT("false")));
 		

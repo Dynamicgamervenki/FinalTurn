@@ -68,9 +68,11 @@ public:
     // --- Internal State ---
     UPROPERTY(BlueprintReadWrite)
     EEquipState EquipState = EEquipState::None;
+    UPROPERTY(BlueprintReadWrite)
+    EPickupType CurrentPickupType = EPickupType::None;
     void ThrowEquippedItem(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
 
-    UFUNCTION()
+    UFUNCTION(BlueprintImplementableEvent)
     void ShootGun(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
     
     void PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor);
@@ -182,6 +184,12 @@ protected:
 
     UFUNCTION(BlueprintCallable)
     void PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass);
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    TMap<EPickupType,int32> PickupCounts;
+
+    UFUNCTION()
+    void UpdateInventoryAmmo(EPickupType PickupType, int32 Amount);
     
 private:
     UFUNCTION()
