@@ -114,7 +114,7 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::Dynamite:
-		ThrowEquippedItem(InteractLocation,HitActor);
+		ThrowEquippedItem(HitImpactLocation,HitActor);
 		break;
 	case EEquipState::HeavyDynamite: 
 		IInteractInterface::Execute_Interact(HitActor,this);
@@ -151,6 +151,7 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 	
 	if (EquipState == InEquipState)
 	{
+		
 		if (EquippedItem)
 		{
 			GEngine->AddOnScreenDebugMessage(558, 5.0f, FColor::Green, TEXT("Unequipped"));
