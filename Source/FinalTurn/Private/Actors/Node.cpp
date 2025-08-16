@@ -94,13 +94,15 @@ TArray<AActor*> ANode::GetOverlappingActorsOnNode_Implementation()
 {
 	TArray<AActor*> OverlappingActors;
 	Box->GetOverlappingActors(OverlappingActors);
+	OverlappingActors.Remove(this);
 	return OverlappingActors;
 }
 
 void ANode::Interact_Implementation(AActor* Interactor)
 {
 	GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("node interaction null"));
-	if (AZack* Zack = Cast<AZack>(Interactor))
+	AZack* Zack = Cast<AZack>(Interactor);
+	if (Zack && !bCannotMoveToNode)
 	{
 		FVector MoveToLocation;
 	

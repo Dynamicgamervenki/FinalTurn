@@ -7,6 +7,7 @@
 #include "Interfaces/InteractInterface.h"
 #include "BreakableActor.generated.h"
 
+class ANode;
 struct FChaosBreakEvent;
 enum class EPickupType : uint8;
 class USphereComponent;
@@ -48,6 +49,10 @@ protected:
 
 	UFUNCTION()
 	void OnGeometryCollectionBreak(const FChaosBreakEvent& BreakEvent);
+
+	UPROPERTY(EditAnywhere,Category=Breakable)
+	ANode* NodeToMoveAfterDestroyingBreakable;
+	
 private:
 	UPROPERTY(VisibleAnywhere)
 	UGeometryCollectionComponent* GeometryCollection;

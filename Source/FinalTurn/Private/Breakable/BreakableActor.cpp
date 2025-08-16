@@ -2,6 +2,7 @@
 
 
 #include "Breakable/BreakableActor.h"
+#include "Actors/Node.h"
 #include "Characters/Player/Zack.h"
 #include "Components/SphereComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
@@ -15,18 +16,21 @@ ABreakableActor::ABreakableActor()
 	GeometryCollection->SetGenerateOverlapEvents(true);
 	GeometryCollection->SetNotifyBreaks(true);
 	GeometryCollection->OnChaosBreakEvent.AddDynamic(this,&ABreakableActor::OnGeometryCollectionBreak);
-
+	GeometryCollection->SetCanEverAffectNavigation(false);
+	
 	SphereCollision = CreateDefaultSubobject<USphereComponent>("BoxComponent");
 	SphereCollision->SetupAttachment(GeometryCollection);
 	SphereCollision->OnComponentBeginOverlap.AddDynamic(this,&ABreakableActor::OnBoxOverlap);
 	SphereCollision->ShapeColor = FColor(0, 197, 255, 255);
 	SphereCollision->SetSphereRadius(100.0f);
+
 } 
 
 void ABreakableActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if (NodeToMoveAfterDestroyingBreakable)
+		NodeToMoveAfterDestroyingBreakable->bCannotMoveToNode = true;
 }
 
 void ABreakableActor::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -48,7 +52,7 @@ void ABreakableActor::Interact_Implementation(AActor* Interactor)
 	{
 		GEngine->AddOnScreenDebugMessage(-12, 5.f, FColor::Red, TEXT("Interact from BreakableActor"));
 		FVector MoveToLocation;
-		if (Zack->EquipState == EEquipState::HeavyDynamite && HeavydynamitePlacingPositionActor)
+		if (Zack->CurrentEquipState == EEquipState::HeavyDynamite && HeavydynamitePlacingPositionActor)
 		{
 			if (bStopBeforeUnits)
 			{
@@ -68,7 +72,7 @@ void ABreakableActor::Interact_Implementation(AActor* Interactor)
 
 void ABreakableActor::HandleZackOverlap(AZack* Zack)
 {
-	if (bPlaceHeavyDynamiteOnClick && Zack->EquipState == EEquipState::HeavyDynamite)
+	if (bPlaceHeavyDynamiteOnClick && Zack->CurrentEquipState == EEquipState::HeavyDynamite)
 	{
 		Zack->BreakableActor = this;
 		Zack->HeavyDynamiteSpawnLocation = HeavydynamitePlacingPositionActor->GetActorLocation();
@@ -114,6 +118,8 @@ void ABreakableActor::ResetGlow_Implementation()
 
 void ABreakableActor::OnGeometryCollectionBreak(const FChaosBreakEvent& BreakEvent)
 {
+	if (NodeToMoveAfterDestroyingBreakable)
+		NodeToMoveAfterDestroyingBreakable->bCannotMoveToNode = false;
 	GeometryCollection->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 	SetLifeSpan(1.0f);
 }

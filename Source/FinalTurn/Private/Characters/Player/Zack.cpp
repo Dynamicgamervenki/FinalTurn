@@ -90,12 +90,15 @@ void AZack::OnInteract()
 			GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Yellow,FString::Printf(TEXT("HitActor Implements InteractInterface")));
 			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
 			HitImpactLocation = Hit.Location;
-			PerformEquipStateAction(EquipState,MoveLocation,Hit.GetActor());
+			PerformEquipStateAction(CurrentEquipState,MoveLocation,Hit.GetActor());
 		}
 		else if(ACharacter* Enemy = Cast<ACharacter>(Hit.GetActor()))
 		{
 			MoveLocation = Hit.GetActor()->GetActorLocation();
-			DoMoveTo(MoveLocation);
+			if (CurrentEquipState == EEquipState::None)
+				DoMoveTo(MoveLocation);
+			else if (CurrentEquipState == EEquipState::Gun)
+					ShootGun(MoveLocation,Hit.GetActor());
 		}
 	}
 }
@@ -149,8 +152,12 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 	EEquipState InEquipState = PickupData.EquipState;
 	CurrentPickupType = PickupData.PickupType;
 	
-	if (EquipState == InEquipState)
+	if (CurrentEquipState == InEquipState)//when player already in equipstate and clicked on button again without using equiiped item ,unequipping that item
 	{
+		FString InEquipStateMsg = FString::Printf(TEXT("InEquipState : %s"), *UEnum::GetValueAsString(InEquipState));
+		FString CurrentEquipStateMsg = FString::Printf(TEXT("InEquipState : %s"), *UEnum::GetValueAsString(InEquipState));
+		GEngine->AddOnScreenDebugMessage(52, 5.0f, FColor::Green, InEquipStateMsg);
+		GEngine->AddOnScreenDebugMessage(53, 5.0f, FColor::Green, CurrentEquipStateMsg);
 		
 		if (EquippedItem)
 		{
@@ -160,15 +167,32 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 			EquippedItem = nullptr;
 			DisableHighlightEffect();
 		}
-		EquipState = EEquipState::None;
+		CurrentEquipState = EEquipState::None;
 		CurrentPickupType = EPickupType::None;
 		return;
+	}
+
+	//DisableHighlightEffect();
+	if (CurrentEquipState != InEquipState)
+	{
+		if (CurrentEquipState == EEquipState::Gun && !EquippedItem)
+		{
+			OnGunUnequip.AddDynamic(this,&AZack::Equip);
+			UnEquipGun(CurrentPickupType);
+			return;
+		}
+		if (EquippedItem)
+		{
+			EquippedItem->SetActorLocation(FVector(0, 0, 0));
+			EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			EquippedItem = nullptr;
+		}
 	}
 
 	if (!HasAmmoForEquipState(InEquipState))
 	{
 		GEngine->AddOnScreenDebugMessage(51, 2.0f, FColor::Green, TEXT("HasNoAmmo"));
-		EquipState = EEquipState::None;
+		CurrentEquipState = EEquipState::None;
 		CurrentPickupType = EPickupType::None;
 		return;
 	}
@@ -193,15 +217,17 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 
 void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState)
 {
-	Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	Pickup->ItemMesh->SetRenderCustomDepth(true);
-	Pickup->ItemMesh->SetCustomDepthStencilValue(1);
-	SetEquippedItem(Pickup);
-
-	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
-	PlayAnimMontages(EquipStoneMontage);
-	Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
-	EquipState = InEquipState;
+	if (CurrentEquipState != EEquipState::Gun)	//Gun-State Beign Handled in Blueprints
+	{
+		Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		Pickup->ItemMesh->SetRenderCustomDepth(true);
+		Pickup->ItemMesh->SetCustomDepthStencilValue(1);
+		SetEquippedItem(Pickup);
+		PlayAnimMontages(EquipStoneMontage);
+		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
+		Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
+		CurrentEquipState = InEquipState;
+	}
 }
 
 
@@ -261,7 +287,6 @@ void AZack::PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup)
 }
 
 
-
 void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
@@ -289,10 +314,10 @@ void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreD
 		return;
 	}
 
-	if (!HasAmmoForEquipState(EquipState))
+	if (!HasAmmoForEquipState(CurrentEquipState))
 	{
 		GEngine->AddOnScreenDebugMessage(16, 3, FColor::Green, "No ammo, switching state");
-		EquipState = EEquipState::None;
+		CurrentEquipState = EEquipState::None;
 		DoMoveTo(Dest);
 
 		if (EquippedItem)
@@ -368,7 +393,7 @@ void AZack::OnThrowableLoaded()
 	// Deduct ammo
 	UpdateInventoryAmmo(CurrentPickupType,-1);
 	CanClickNode = true;
-	EquipState = EEquipState::None;
+	CurrentEquipState = EEquipState::None;
 	CurrentPickupType = EPickupType::None;
 }
 
@@ -403,6 +428,23 @@ void AZack::UpdateInventoryAmmo(EPickupType PickupType, int32 Amount)
 	}
 }
 
+int32 AZack::GetAmmoOfState(EPickupType PickupType)
+{
+	if (PickupCounts.Contains(PickupType))
+	{
+		int32& AmmoAmount = PickupCounts[PickupType];
+		return AmmoAmount;
+	}
+	return 0;
+}
+
+
+
+void AZack::BroadCastGunUnequip(EPickupType InPickUpType)
+{
+	OnGunUnequip.Broadcast(InPickUpType);
+}
+
 void AZack::SetDetectedByEnemy_Implementation(bool bDetected)
 {
 	GotDetectedByEnemy = bDetected;
@@ -432,7 +474,11 @@ void AZack::PrintOutData()
 		
 		GEngine->AddOnScreenDebugMessage(
 			-3, 2.0f, FColor::Yellow,
-			FString::Printf(TEXT("EquipState (int): %d"), static_cast<int32>(EquipState))
+			FString::Printf(TEXT("EquipState (int): %s"), *UEnum::GetValueAsString(CurrentEquipState))
+		);
+		GEngine->AddOnScreenDebugMessage(
+			-4, 2.0f, FColor::Yellow,
+			FString::Printf(TEXT("PickupType (int): %s"), *UEnum::GetValueAsString(CurrentPickupType))
 		);
 	}
 }
