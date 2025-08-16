@@ -16,6 +16,8 @@ class AThrowableItem;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPickupUpdated, EPickupType, PickupType, int32, NewAmount);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGunUnequip,EEquipState,EquipState,EPickupType,InPickupType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGunUnequip,EPickupType,InPickupType);
 
 UCLASS()
 class FINALTURN_API AZack : public ACharacter, public IPickupInterface
@@ -27,6 +29,8 @@ public:
 
     UPROPERTY(BlueprintAssignable)
     FOnPickupUpdated OnPickupUpdated;
+    UPROPERTY(BlueprintAssignable)
+    FOnGunUnequip OnGunUnequip;
     // --- Unreal Overrides ---
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     virtual void BeginPlay() override;
@@ -62,13 +66,20 @@ public:
     // --- Inline Setters for Pickup Items ---
     FORCEINLINE void SetEquippedItem(APickup* Equipped) { EquippedItem = Equipped;}
 
-    UFUNCTION()
+    UFUNCTION(BlueprintCallable)
     void DoMoveTo(const FVector& Dest,float Offset = 20,bool IgnoreDistance = false);
     
     // --- Internal State ---
     UPROPERTY(BlueprintReadWrite)
-    EEquipState EquipState = EEquipState::None;
+    EEquipState CurrentEquipState = EEquipState::None;
+    UPROPERTY(BlueprintReadWrite)
+    EPickupType CurrentPickupType = EPickupType::None;
     void ThrowEquippedItem(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void ShootGun(const FVector& Dest,AActor* HitActor,bool IgnoreDistance = false);
+    UFUNCTION(BlueprintImplementableEvent)
+    void UnEquipGun(EPickupType InPickupType);
     
     void PerformEquipStateAction(EEquipState State, const FVector& InteractLocation, AActor* HitActor);
 
@@ -96,6 +107,8 @@ public:
     UPROPERTY(BlueprintReadWrite)
     bool bOnFinalNode;
     
+    UFUNCTION(BlueprintCallable)
+    int32 GetAmmoOfState(EPickupType PickupType);
     
 protected:
     // --- Input Handling ---
@@ -123,23 +136,8 @@ protected:
     TObjectPtr<UInputAction> IA_Move;
     
     // --- Pickup Items ---
-    UPROPERTY(VisibleAnywhere, Category = "Combat")
-    APickup* PickupItem;
-    UPROPERTY(BlueprintReadWrite, Category = "Combat")
+    UPROPERTY(VisibleAnywhere,BlueprintReadWrite, Category = "Combat")
     APickup* EquippedItem;
-    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
-    int32 StoneCount;
-    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
-    int32 GranadeCount;
-    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
-    int32 DynamiteCount;
-    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
-    int32 HeavyDynamiteCount;
-    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
-    int32 LavaCrystalCount;
-    UPROPERTY(BlueprintReadWrite, Category = "Pickups")
-    int32 LavaOrbCount;
-    
     
     // --- Animation Montages ---
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
@@ -150,6 +148,9 @@ protected:
     UAnimMontage* StealthMontage;
     UPROPERTY(EditDefaultsOnly, Category = "Montages")
     UAnimMontage* PlaceHeavyDynamiteMontage;
+    UPROPERTY(EditDefaultsOnly, Category = "Montages")
+    UAnimMontage* DrawShotGunMontage;
+    
 
     UFUNCTION(BlueprintCallable)
     bool CanClickOnNode(const FVector &Dest,bool IgnoreDistance = false);
@@ -174,7 +175,14 @@ protected:
 
     UFUNCTION(BlueprintCallable)
     void PickupAsyncLoad(TSoftClassPtr<APickup> pickupClass);
-    
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+    TMap<EPickupType,int32> PickupCounts;
+
+    UFUNCTION(BlueprintCallable)
+    void UpdateInventoryAmmo(EPickupType PickupType, int32 Amount);
+    UFUNCTION(BlueprintCallable)
+    void BroadCastGunUnequip(EPickupType InPickUpType);
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);
@@ -194,5 +202,7 @@ private:
     void OnThrowableLoaded();
     UFUNCTION()
     void PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup);
+  //  UFUNCTION()
+    //void HandleGunUnequipDelegate(EEquipState InEquipState,EPickupType InPickUpType);
     
 };

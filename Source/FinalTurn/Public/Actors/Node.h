@@ -47,6 +47,9 @@ public :
 	FName LevelName;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool bCannotMoveToNode = false;
+	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="bStopBeforeUnits"))
 	float UnitsBeforeStop = 100.0f;

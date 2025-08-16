@@ -90,12 +90,15 @@ void AZack::OnInteract()
 			GEngine->AddOnScreenDebugMessage(123,2.0f,FColor::Yellow,FString::Printf(TEXT("HitActor Implements InteractInterface")));
 			MoveLocation = IInteractInterface::Execute_InteractPosition(Hit.GetActor());
 			HitImpactLocation = Hit.Location;
-			PerformEquipStateAction(EquipState,MoveLocation,Hit.GetActor());
+			PerformEquipStateAction(CurrentEquipState,MoveLocation,Hit.GetActor());
 		}
 		else if(ACharacter* Enemy = Cast<ACharacter>(Hit.GetActor()))
 		{
 			MoveLocation = Hit.GetActor()->GetActorLocation();
-			DoMoveTo(MoveLocation);
+			if (CurrentEquipState == EEquipState::None)
+				DoMoveTo(MoveLocation);
+			else if (CurrentEquipState == EEquipState::Gun)
+					ShootGun(MoveLocation,Hit.GetActor());
 		}
 	}
 }
@@ -110,11 +113,11 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 	case EEquipState::Stone:
 		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
-	case EEquipState::Grenade:
+	case EEquipState::Granade:
 		ThrowEquippedItem(InteractLocation,HitActor);
 		break;
 	case EEquipState::Dynamite:
-		ThrowEquippedItem(InteractLocation,HitActor);
+		ThrowEquippedItem(HitImpactLocation,HitActor);
 		break;
 	case EEquipState::HeavyDynamite: 
 		IInteractInterface::Execute_Interact(HitActor,this);
@@ -125,6 +128,8 @@ void AZack::PerformEquipStateAction(EEquipState State, const FVector& InteractLo
 	case EEquipState::LavaOrb: 
 		ThrowEquippedItem(InteractLocation,HitActor,true);
 		break;
+	case EEquipState::Gun:
+		ShootGun(InteractLocation,HitActor);
 	}
 }
 
@@ -145,9 +150,15 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 {
 	FName SocketName = PickupData.SocketName;
 	EEquipState InEquipState = PickupData.EquipState;
+	CurrentPickupType = PickupData.PickupType;
 	
-	if (EquipState == InEquipState)
+	if (CurrentEquipState == InEquipState)//when player already in equipstate and clicked on button again without using equiiped item ,unequipping that item
 	{
+		FString InEquipStateMsg = FString::Printf(TEXT("InEquipState : %s"), *UEnum::GetValueAsString(InEquipState));
+		FString CurrentEquipStateMsg = FString::Printf(TEXT("InEquipState : %s"), *UEnum::GetValueAsString(InEquipState));
+		GEngine->AddOnScreenDebugMessage(52, 5.0f, FColor::Green, InEquipStateMsg);
+		GEngine->AddOnScreenDebugMessage(53, 5.0f, FColor::Green, CurrentEquipStateMsg);
+		
 		if (EquippedItem)
 		{
 			GEngine->AddOnScreenDebugMessage(558, 5.0f, FColor::Green, TEXT("Unequipped"));
@@ -156,14 +167,33 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 			EquippedItem = nullptr;
 			DisableHighlightEffect();
 		}
-		EquipState = EEquipState::None;
+		CurrentEquipState = EEquipState::None;
+		CurrentPickupType = EPickupType::None;
 		return;
+	}
+
+	//DisableHighlightEffect();
+	if (CurrentEquipState != InEquipState)
+	{
+		if (CurrentEquipState == EEquipState::Gun && !EquippedItem)
+		{
+			OnGunUnequip.AddDynamic(this,&AZack::Equip);
+			UnEquipGun(CurrentPickupType);
+			return;
+		}
+		if (EquippedItem)
+		{
+			EquippedItem->SetActorLocation(FVector(0, 0, 0));
+			EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			EquippedItem = nullptr;
+		}
 	}
 
 	if (!HasAmmoForEquipState(InEquipState))
 	{
 		GEngine->AddOnScreenDebugMessage(51, 2.0f, FColor::Green, TEXT("HasNoAmmo"));
-		EquipState = EEquipState::None;
+		CurrentEquipState = EEquipState::None;
+		CurrentPickupType = EPickupType::None;
 		return;
 	}
 	
@@ -187,37 +217,25 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 
 void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState)
 {
-	Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	Pickup->ItemMesh->SetRenderCustomDepth(true);
-	Pickup->ItemMesh->SetCustomDepthStencilValue(1);
-	SetEquippedItem(Pickup);
-
-	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
-	PlayAnimMontages(EquipStoneMontage);
-	Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
-	EquipState = InEquipState;
+	if (CurrentEquipState != EEquipState::Gun)	//Gun-State Beign Handled in Blueprints
+	{
+		Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		Pickup->ItemMesh->SetRenderCustomDepth(true);
+		Pickup->ItemMesh->SetCustomDepthStencilValue(1);
+		SetEquippedItem(Pickup);
+		PlayAnimMontages(EquipStoneMontage);
+		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
+		Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
+		CurrentEquipState = InEquipState;
+	}
 }
 
 
 bool AZack::HasAmmoForEquipState(EEquipState State)
 { 
-	switch (State)
-	{
-	case EEquipState::Stone:
-		return StoneCount > 0;
-	case EEquipState::Grenade:
-		return GranadeCount > 0;
-	case EEquipState::Dynamite:
-		return DynamiteCount > 0;
-	case EEquipState::HeavyDynamite:
-	     return HeavyDynamiteCount > 0;
-	case EEquipState::LavaCrystal:
-	     return LavaCrystalCount > 0;
-	case EEquipState::LavaOrb:
-	     return LavaOrbCount > 0;
-	default:
-		return false;
-	}
+	EPickupType PickupType = (EPickupType)State;
+	const int32* Count = PickupCounts.Find(PickupType);
+	return (Count && *Count > 0);
 }
 
 void AZack::InvokeDisableHiglightEffectThroughBp()
@@ -269,7 +287,6 @@ void AZack::PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup)
 }
 
 
-
 void AZack::DoMoveTo(const FVector& Dest,float OffsetValue,bool IgnoreDistance)
 {
 	double distance = UKismetMathLibrary::Vector_Distance(Dest,GetActorLocation());
@@ -297,10 +314,10 @@ void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreD
 		return;
 	}
 
-	if (!HasAmmoForEquipState(EquipState))
+	if (!HasAmmoForEquipState(CurrentEquipState))
 	{
 		GEngine->AddOnScreenDebugMessage(16, 3, FColor::Green, "No ammo, switching state");
-		EquipState = EEquipState::None;
+		CurrentEquipState = EEquipState::None;
 		DoMoveTo(Dest);
 
 		if (EquippedItem)
@@ -317,6 +334,8 @@ void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreD
 	SetActorRotation(LookRotator);
 	PlayAnimMontages(ThrowMontage);
 }
+
+
 
 void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
 {
@@ -372,19 +391,10 @@ void AZack::OnThrowableLoaded()
 	//EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
 	
 	// Deduct ammo
-	switch (EquipState)
-	{
-	case EEquipState::Stone:   StoneCount--; OnPickupUpdated.Broadcast(EPickupType::Stone, StoneCount); break;
-	case EEquipState::Grenade: GranadeCount--; OnPickupUpdated.Broadcast(EPickupType::Granade, GranadeCount); break;
-	case EEquipState::Dynamite: DynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::Dynamite, DynamiteCount); break;
-	case EEquipState::HeavyDynamite: HeavyDynamiteCount--; OnPickupUpdated.Broadcast(EPickupType::HeavyDynamite, HeavyDynamiteCount); break;
-	case EEquipState::LavaCrystal: LavaCrystalCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaCrystalCount); break;
-	case EEquipState::LavaOrb : LavaOrbCount--; OnPickupUpdated.Broadcast(EPickupType::LavaCrystal, LavaOrbCount); break;
-	default: break;
-	}
-
+	UpdateInventoryAmmo(CurrentPickupType,-1);
 	CanClickNode = true;
-	EquipState = EEquipState::None;
+	CurrentEquipState = EEquipState::None;
+	CurrentPickupType = EPickupType::None;
 }
 
 
@@ -401,36 +411,38 @@ void AZack::HandleThrowableImpact(AActor* HitActor)
 
 void AZack::OnPickedUp(EPickupType PickupType, int32 Amount)
 {
-	int32 NewAmount = 0;
-	
-	switch (PickupType)
+	int32& CurrentAmount = PickupCounts.FindOrAdd(PickupType);
+	CurrentAmount += Amount;
+
+	OnPickupUpdated.Broadcast(PickupType, CurrentAmount);
+}
+
+void AZack::UpdateInventoryAmmo(EPickupType PickupType, int32 Amount)
+{
+	if (PickupCounts.Contains(PickupType))
 	{
-	case EPickupType::Stone:
-		StoneCount += Amount;
-		NewAmount = StoneCount;
-		break;
-	case EPickupType::Granade:
-		GranadeCount += Amount;
-		NewAmount = GranadeCount;
-		break;
-	case EPickupType::Dynamite:
-		DynamiteCount += Amount;
-		NewAmount = DynamiteCount;
-		break;
-	case EPickupType::HeavyDynamite:
-		HeavyDynamiteCount += Amount;
-		NewAmount = HeavyDynamiteCount;
-		break;
-	case EPickupType::LavaCrystal:
-		LavaCrystalCount += Amount;
-		NewAmount = LavaCrystalCount;
-		break;
-	case EPickupType::LavaOrb:
-		LavaOrbCount += Amount;
-		NewAmount = LavaOrbCount;
-		break;
-	};
-	OnPickupUpdated.Broadcast(PickupType,NewAmount);
+		int32& CurrentAmount = PickupCounts[PickupType];
+		CurrentAmount += Amount;
+		CurrentAmount = FMath::Clamp(CurrentAmount, 0.0f, INT_MAX);
+		OnPickupUpdated.Broadcast(PickupType, CurrentAmount);
+	}
+}
+
+int32 AZack::GetAmmoOfState(EPickupType PickupType)
+{
+	if (PickupCounts.Contains(PickupType))
+	{
+		int32& AmmoAmount = PickupCounts[PickupType];
+		return AmmoAmount;
+	}
+	return 0;
+}
+
+
+
+void AZack::BroadCastGunUnequip(EPickupType InPickUpType)
+{
+	OnGunUnequip.Broadcast(InPickUpType);
 }
 
 void AZack::SetDetectedByEnemy_Implementation(bool bDetected)
@@ -457,24 +469,16 @@ void AZack::PrintOutData()
 {
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(8, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Stones: %d"), StoneCount));
-		GEngine->AddOnScreenDebugMessage(10, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Grenades: %d"), GranadeCount));
-		GEngine->AddOnScreenDebugMessage(11, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("Dynamite: %d"), DynamiteCount));
-		GEngine->AddOnScreenDebugMessage(12, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("HeavyDynamite: %d"), HeavyDynamiteCount));
-		GEngine->AddOnScreenDebugMessage(13, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("LavaCrystal: %d"), LavaCrystalCount));
-		GEngine->AddOnScreenDebugMessage(14, 2.0f, FColor::Yellow, 
-			FString::Printf(TEXT("LavaOrb: %d"), LavaOrbCount));
 		GEngine->AddOnScreenDebugMessage(15, 2.0f, FColor::Yellow,
 	FString::Printf(TEXT("CanClickNode: %s"), CanClickNode ? TEXT("true") : TEXT("false")));
 		
 		GEngine->AddOnScreenDebugMessage(
 			-3, 2.0f, FColor::Yellow,
-			FString::Printf(TEXT("EquipState (int): %d"), static_cast<int32>(EquipState))
+			FString::Printf(TEXT("EquipState (int): %s"), *UEnum::GetValueAsString(CurrentEquipState))
+		);
+		GEngine->AddOnScreenDebugMessage(
+			-4, 2.0f, FColor::Yellow,
+			FString::Printf(TEXT("PickupType (int): %s"), *UEnum::GetValueAsString(CurrentPickupType))
 		);
 	}
 }
@@ -508,8 +512,8 @@ void AZack::PlayAnimMontageInReverse(UAnimMontage* MontageToPlay)
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && MontageToPlay)
 	{
-		AnimInstance->Montage_Play(MontageToPlay, -1.f);
 		float MontageLength = MontageToPlay->GetPlayLength();
+		AnimInstance->Montage_Play(MontageToPlay, -1.f);
 		AnimInstance->Montage_SetPosition(MontageToPlay, MontageLength);
 	}
 }
