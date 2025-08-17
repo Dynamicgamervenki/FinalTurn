@@ -7,6 +7,7 @@
 #include "Pickups/PickupType.h"
 #include "Pickup.generated.h"
 
+class URotatingMovementComponent;
 class UFieldSystemComponent;
 class URadialVector;
 class UFieldSystemMetaData;
@@ -29,7 +30,9 @@ protected:
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 	//UFUNCTION()
 	//virtual  void OnSphereEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
+	URotatingMovementComponent* RotatingMovement;
+	
 public:	
 	virtual void Tick(float DeltaTime) override;
 	
@@ -62,4 +65,6 @@ public:
 	void Field(FVector Location);
 	UFUNCTION(BlueprintCallable)
 	void ActivateField(FVector Location);
+	
+	FORCEINLINE URotatingMovementComponent* GetRotatingMovement() const { return RotatingMovement; }
 };

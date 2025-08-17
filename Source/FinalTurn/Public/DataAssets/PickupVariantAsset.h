@@ -21,7 +21,10 @@ struct FPickupVariantData
 	EEquipState EquipState; 
 
 	UPROPERTY(EditAnywhere)
-	FName SocketName; 
+	FName SocketName;
+	
+	UPROPERTY(EditAnywhere)
+	FVector SpawnScale;
 };
 UCLASS()
 class FINALTURN_API UPickupVariantAsset : public UDataAsset

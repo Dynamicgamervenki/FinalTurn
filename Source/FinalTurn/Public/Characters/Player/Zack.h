@@ -86,9 +86,6 @@ public:
     UFUNCTION(BlueprintCallable)
     void ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation);
 
-    UFUNCTION(BlueprintCallable)
-    void AmmoUpdateBroadCast(EPickupType type,int Ammo);
-    
     UFUNCTION(BlueprintImplementableEvent)
     void PlayPlacignHeavyDynamiteMontage();
 
@@ -197,7 +194,7 @@ private:
     UFUNCTION()
     bool HasAmmoForEquipState(EEquipState State);
     UFUNCTION()
-    void HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState);
+    void HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState,FVector PickupScale);
     UFUNCTION()
     void OnThrowableLoaded();
     UFUNCTION()
