@@ -5,6 +5,7 @@
 #include "Components/SphereComponent.h"
 #include "Characters/Player/Zack.h"
 #include "Field/FieldSystemObjects.h"
+#include "GameFramework/RotatingMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 
 APickup::APickup()
@@ -26,6 +27,10 @@ APickup::APickup()
 	RadialFalloff = CreateDefaultSubobject<URadialFalloff>(TEXT("RadialFalloff"));
 	FieldSystemMetaDataFilter = CreateDefaultSubobject<UFieldSystemMetaData>(TEXT("FieldSystemMetaDataFilter"));
 	RadialVector = CreateDefaultSubobject<URadialVector>(TEXT("RadialVector"));
+
+	RotatingMovement = CreateDefaultSubobject<URotatingMovementComponent>(TEXT("RotatingMovementComponent"));
+	RotatingMovement->RotationRate = FRotator(0.f, 180.f, 0.f);
+	RotatingMovement->SetAutoActivate(true);
 }
 
 void APickup::BeginPlay()
@@ -42,6 +47,7 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	if (AZack* Zack = Cast<AZack>(OtherActor))
 	{
 		PulseEffect->SetVisibility(false);
+		RotatingMovement->DestroyComponent();
 		PlayPickUpSound(GetActorLocation());
 		this->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);

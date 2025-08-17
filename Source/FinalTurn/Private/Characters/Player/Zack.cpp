@@ -16,6 +16,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Components/PawnNoiseEmitterComponent.h"
 #include "DataAssets/PickupVariantAsset.h"
+#include "GameFramework/RotatingMovementComponent.h"
 
 AZack::AZack()
 {
@@ -151,6 +152,7 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 	FName SocketName = PickupData.SocketName;
 	EEquipState InEquipState = PickupData.EquipState;
 	CurrentPickupType = PickupData.PickupType;
+	FVector PickupScale = PickupData.SpawnScale;
 	
 	if (CurrentEquipState == InEquipState)//when player already in equipstate and clicked on button again without using equiiped item ,unequipping that item
 	{
@@ -212,16 +214,17 @@ void AZack::EquipPickupFromInventory(FPickupVariantData PickupData)
 		return;
 	}
 	HighlightNearByNodes();
-	HandlePickupEquipped(Pickup,SocketName, InEquipState);
+	HandlePickupEquipped(Pickup,SocketName, InEquipState,PickupScale);
 }
 
-void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState)
+void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState InEquipState,FVector PickupScale)
 {
 	if (CurrentEquipState != EEquipState::Gun)	//Gun-State Beign Handled in Blueprints
 	{
 		Pickup->Sphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 		Pickup->ItemMesh->SetRenderCustomDepth(true);
 		Pickup->ItemMesh->SetCustomDepthStencilValue(1);
+		Pickup->ItemMesh->SetRelativeScale3D(PickupScale);
 		SetEquippedItem(Pickup);
 		PlayAnimMontages(EquipStoneMontage);
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
@@ -282,6 +285,7 @@ void AZack::PickupAsyncLoaded(TSoftClassPtr<APickup> loadedPickup)
 	{
 		pickup->SetActorScale3D(FVector(2, 2, 2));
 		pickup->Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		pickup->GetRotatingMovement()->DestroyComponent();
 		AddPickUpItem(pickup);
 	}
 }
@@ -341,12 +345,6 @@ void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& Noise
 {
 	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
 }
-
-void AZack::AmmoUpdateBroadCast(EPickupType type, int Ammo)
-{
-	OnPickupUpdated.Broadcast(type,Ammo);
-}
-
 
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
