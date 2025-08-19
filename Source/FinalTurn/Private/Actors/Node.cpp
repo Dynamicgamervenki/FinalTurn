@@ -171,7 +171,8 @@ void ANode::HandleFinalNodeTransition(AZack* Zack)
 	DelayTimerHandle,
 	FTimerDelegate::CreateLambda([this,Zack]()
 	{
-		UGameplayStatics::OpenLevel(this,LevelName);
+		//UGameplayStatics::OpenLevel(this,LevelName);
+		Zack->ShowGameCompletedWidget();
 		Zack->CanClickNode = true;
 		Zack->bOnFinalNode = false;
 	}),

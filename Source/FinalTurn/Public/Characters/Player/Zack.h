@@ -106,6 +106,9 @@ public:
     
     UFUNCTION(BlueprintCallable)
     int32 GetAmmoOfState(EPickupType PickupType);
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void ShowGameCompletedWidget();
     
 protected:
     // --- Input Handling ---
@@ -180,6 +183,10 @@ protected:
     void UpdateInventoryAmmo(EPickupType PickupType, int32 Amount);
     UFUNCTION(BlueprintCallable)
     void BroadCastGunUnequip(EPickupType InPickUpType);
+    
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UUserWidget> GameCompletedWidget;
+    
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);

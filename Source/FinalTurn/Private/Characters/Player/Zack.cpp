@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "Blueprint/UserWidget.h"
 #include "Characters/Enemies/EnemyBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
@@ -17,6 +18,7 @@
 #include "Components/PawnNoiseEmitterComponent.h"
 #include "DataAssets/PickupVariantAsset.h"
 #include "GameFramework/RotatingMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 AZack::AZack()
 {
