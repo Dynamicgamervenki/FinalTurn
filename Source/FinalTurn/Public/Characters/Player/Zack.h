@@ -16,8 +16,8 @@ class AThrowableItem;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPickupUpdated, EPickupType, PickupType, int32, NewAmount);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGunUnequip,EEquipState,EquipState,EPickupType,InPickupType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGunUnequip,EPickupType,InPickupType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGunSpawnedDelegate, AActor*, SpawnedGunActor);
 
 UCLASS()
 class FINALTURN_API AZack : public ACharacter, public IPickupInterface
@@ -110,6 +110,12 @@ public:
     UFUNCTION(BlueprintImplementableEvent)
     void ShowGameCompletedWidget();
     
+    UFUNCTION(BlueprintCallable)
+    void LoadGunAsync();
+
+    UPROPERTY(BlueprintAssignable)
+    FGunSpawnedDelegate OnGunSpawned;
+    
 protected:
     // --- Input Handling ---
     UFUNCTION(BlueprintCallable) void OnInteract();
@@ -186,7 +192,13 @@ protected:
     
     UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<UUserWidget> GameCompletedWidget;
+
+    UPROPERTY(BlueprintReadOnly)
+    TSoftClassPtr<AActor> ShotGun;
     
+    UPROPERTY(BlueprintReadWrite)
+    AActor* SpawnedShotGun;
+
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);

@@ -80,6 +80,37 @@ void AZack::AddPickUpItem(APickup* Pickup)
 	PickupActors.Add(Pickup);
 }
 
+void AZack::LoadGunAsync()
+{
+	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+	Streamable.RequestAsyncLoad(
+		ShotGun.ToSoftObjectPath(),
+		FStreamableDelegate::CreateLambda([this,SkeletalMeshComponent]()
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			SpawnParams.Owner = this;
+			SpawnParams.Instigator = this;
+
+			FVector SpawnLocation = SkeletalMeshComponent->GetSocketLocation(FName("GunUnequipSocket")); 
+			FRotator SpawnRotation = SkeletalMeshComponent->GetSocketRotation(FName("GunUnequipSocket"));
+			UClass* ShotGunClass = ShotGun.Get();
+			
+			if (ShotGunClass)
+			{
+				AActor* Gun = GetWorld()->SpawnActor<AActor>(ShotGunClass,SpawnLocation,SpawnRotation,SpawnParams);
+
+				if (Gun)
+				{
+					Gun->AttachToComponent(SkeletalMeshComponent,FAttachmentTransformRules::SnapToTargetIncludingScale,FName("GunUnequipSocket"));
+					OnGunSpawned.Broadcast(Gun);
+				}
+			}
+		})
+	);
+}
+
 void AZack::OnInteract()
 {
 	FHitResult Hit;
