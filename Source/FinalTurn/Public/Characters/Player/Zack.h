@@ -97,6 +97,7 @@ public:
 
     UPROPERTY(VisibleInstanceOnly,BlueprintReadWrite,Category = Default)
     TArray<APickup*> PickupActors;
+
     
     UFUNCTION(BlueprintCallable)
     void AddPickUpItem(APickup* Pickup);
