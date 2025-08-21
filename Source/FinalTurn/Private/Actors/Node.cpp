@@ -95,6 +95,7 @@ TArray<AActor*> ANode::GetOverlappingActorsOnNode_Implementation()
 	TArray<AActor*> OverlappingActors;
 	Box->GetOverlappingActors(OverlappingActors);
 	OverlappingActors.Remove(this);
+	OverlappingActors.Remove(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
 	return OverlappingActors;
 }
 
