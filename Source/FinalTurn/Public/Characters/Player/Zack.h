@@ -19,6 +19,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPickupUpdated, EPickupType, Pick
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGunUnequip,EPickupType,InPickupType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGunSpawnedDelegate, AActor*, SpawnedGunActor);
 
+
 UCLASS()
 class FINALTURN_API AZack : public ACharacter, public IPickupInterface
 {
@@ -31,6 +32,7 @@ public:
     FOnPickupUpdated OnPickupUpdated;
     UPROPERTY(BlueprintAssignable)
     FOnGunUnequip OnGunUnequip;
+
     // --- Unreal Overrides ---
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     virtual void BeginPlay() override;

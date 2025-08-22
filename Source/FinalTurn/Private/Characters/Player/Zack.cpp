@@ -403,7 +403,8 @@ void AZack::OnThrowableLoaded()
 	EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
 	//EquippedItem->SetActorEnableCollision(true);
-	
+	EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
+
 	EquippedItem->ItemMesh->SetCollisionResponseToAllChannels(ECR_Block);
 	EquippedItem->ItemMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 	EquippedItem->ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -419,7 +420,6 @@ void AZack::OnThrowableLoaded()
 	EquippedItem->Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	EquippedItem = nullptr;
 	
-	//EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
 	
 	// Deduct ammo
 	UpdateInventoryAmmo(CurrentPickupType,-1);

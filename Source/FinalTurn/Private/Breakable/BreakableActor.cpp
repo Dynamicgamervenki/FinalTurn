@@ -100,8 +100,22 @@ void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
 	if (Hit == AmountToGetDestoryed)
 	{
 		Pickup->Field(GetActorLocation());
-		SetLifeSpan(3.0f);
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(
+		TimerHandle,
+		FTimerDelegate::CreateLambda([this]()
+		{
+			OnBreakableDestroyed.Broadcast(this);
+			Destroy();
+		}),
+		3.0f,
+		false);
 	}
+}
+
+void ABreakableActor::DestroyBreakable()
+{
+	
 }
 
 void ABreakableActor::Glow_Implementation()

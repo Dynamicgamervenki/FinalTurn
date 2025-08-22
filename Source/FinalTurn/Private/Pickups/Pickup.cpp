@@ -31,6 +31,8 @@ APickup::APickup()
 	RotatingMovement = CreateDefaultSubobject<URotatingMovementComponent>(TEXT("RotatingMovementComponent"));
 	RotatingMovement->RotationRate = FRotator(0.f, 180.f, 0.f);
 	RotatingMovement->SetAutoActivate(true);
+
+	//PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawm Noise Emitter"));
 }
 
 void APickup::BeginPlay()
@@ -56,13 +58,16 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	}
 	else
 	{
+		BroadcastThrowableImpact(this);
 		SetActorHiddenInGame(true);
-		//ItemMesh->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-		//ItemMesh->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		SetLifeSpan(0.5f);
 	}
 }
 
+// void APickup::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
+// {
+// 	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
+// }
 // void APickup::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 // 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 // {
@@ -77,6 +82,11 @@ void APickup::Tick(float DeltaTime)
 void APickup::ActivateField(FVector Location)
 {
 	Field(Location);
+}
+
+void APickup::BroadcastThrowableImpact(AActor* HitActor)
+{
+	OnThrowableImpact.Broadcast(HitActor);
 }
 
 

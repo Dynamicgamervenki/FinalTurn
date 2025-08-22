@@ -13,6 +13,8 @@ enum class EPickupType : uint8;
 class USphereComponent;
 class UGeometryCollectionComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBreakableDestroyed, AActor*, HitActor);
+
 UCLASS()
 class FINALTURN_API ABreakableActor : public AActor , public IInteractInterface
 {
@@ -24,6 +26,8 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TObjectPtr<USphereComponent> SphereCollision;
 
+	UPROPERTY()
+	FOnBreakableDestroyed OnBreakableDestroyed;
 
 protected:
 	virtual void BeginPlay() override;
@@ -62,6 +66,8 @@ private:
 	void HandleZackOverlap(AZack* Zack);
 	UFUNCTION()
 	void HandlePickupOverlap(APickup* Pickup);
+	UFUNCTION()
+	void DestroyBreakable();
 
 
 public:

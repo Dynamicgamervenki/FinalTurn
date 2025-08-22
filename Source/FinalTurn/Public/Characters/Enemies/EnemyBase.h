@@ -7,6 +7,8 @@
 #include "Interfaces/InteractInterface.h"
 #include "EnemyBase.generated.h"
 
+class UPawnSensingComponent;
+
 UCLASS()
 class FINALTURN_API AEnemyBase : public ACharacter 
 {
@@ -23,6 +25,7 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
+	UPawnSensingComponent* PawnSensing;
 
 	UPROPERTY(BlueprintReadWrite)
 	bool IsDead = false;
