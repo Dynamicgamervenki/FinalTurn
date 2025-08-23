@@ -6,6 +6,7 @@
 #include "Characters/Player/Zack.h"
 #include "Components/SphereComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
+#include "Perception/AISense_Hearing.h"
 #include "Pickups/Pickup.h"
 
 ABreakableActor::ABreakableActor()
@@ -97,9 +98,12 @@ void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
 		return;
 	}
 	Hit++;
+	Pickup->SetActorHiddenInGame(true);
 	if (Hit == AmountToGetDestoryed)
 	{
 		Pickup->Field(GetActorLocation());
+		Pickup->Destroy();
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(),GetActorLocation(),1,this,0,"Explosion");
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(
 		TimerHandle,
@@ -135,7 +139,8 @@ void ABreakableActor::OnGeometryCollectionBreak(const FChaosBreakEvent& BreakEve
 	if (NodeToMoveAfterDestroyingBreakable)
 		NodeToMoveAfterDestroyingBreakable->bCannotMoveToNode = false;
 	GeometryCollection->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
-	SetLifeSpan(1.0f);
+	if (GeometryCollection)
+		SetLifeSpan(1.0f);
 }
 
 FVector ABreakableActor::InteractPosition_Implementation()

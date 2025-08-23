@@ -38,9 +38,6 @@ public:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
     
-    UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Components")
-    UPawnNoiseEmitterComponent* PawnNoiseEmitter;
-
     // --- Pickup Interface ---
     virtual void OnPickedUp(EPickupType PickupType, int32 Amount) override;
     virtual void SetDetectedByEnemy_Implementation(bool bDetected) override;

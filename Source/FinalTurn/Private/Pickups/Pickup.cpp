@@ -7,6 +7,7 @@
 #include "Field/FieldSystemObjects.h"
 #include "GameFramework/RotatingMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Perception/AISense_Hearing.h"
 
 APickup::APickup()
 {
@@ -56,9 +57,10 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 		Zack->OnPickedUp(PickupType,PickupAmount);
 		Zack->AddPickUpItem(this);
 	}
-	else
+	else if (OtherActor->ActorHasTag(FName("Node")))
 	{
-		BroadcastThrowableImpact(this);
+	//	BroadcastThrowableImpact(this);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(),GetActorLocation(),1,this,0,"Distraction");
 		SetActorHiddenInGame(true);
 		SetLifeSpan(0.5f);
 	}

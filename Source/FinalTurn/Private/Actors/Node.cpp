@@ -25,6 +25,8 @@ ANode::ANode()
 	SM_Ring->SetHiddenInGame(false);
 	SM_Ring->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SM_Ring->SetupAttachment(GetRootComponent());
+
+	Tags.Add(FName("Node"));
 }
 
 

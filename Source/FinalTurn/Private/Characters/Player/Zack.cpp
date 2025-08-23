@@ -15,17 +15,15 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/InteractInterface.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Components/PawnNoiseEmitterComponent.h"
 #include "DataAssets/PickupVariantAsset.h"
 #include "GameFramework/RotatingMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Perception/AISense_Hearing.h"
 
 AZack::AZack()
 {
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	moveDistance = 500.0f;
-
-	PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawm Noise Emitter"));
 }
 
 
@@ -376,7 +374,7 @@ void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreD
 
 void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
 {
-	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
+	UAISense_Hearing::ReportNoiseEvent(GetWorld(),NoiseLocation,Loudness,NoiseMaker);
 }
 
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
@@ -436,7 +434,8 @@ void AZack::HandleThrowableImpact(AActor* HitActor)
 	GEngine->AddOnScreenDebugMessage(55, 10, FColor::Red, 
 		FString::Printf(TEXT("Throwable Impact on Actor: %s"), *HitActor->GetName()));
 	FVector Location = HitActor->GetActorLocation();
-	ReportNoise(HitActor, 1.0f, Location);
+	//ReportNoise(HitActor, 1.0f, Location);
+	//HitActor->MakeNoise(1.0f,nullptr,Location);
 }
 
 
