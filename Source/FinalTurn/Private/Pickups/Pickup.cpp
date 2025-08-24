@@ -7,6 +7,7 @@
 #include "Field/FieldSystemObjects.h"
 #include "GameFramework/RotatingMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Perception/AISense_Hearing.h"
 
 APickup::APickup()
 {
@@ -31,6 +32,8 @@ APickup::APickup()
 	RotatingMovement = CreateDefaultSubobject<URotatingMovementComponent>(TEXT("RotatingMovementComponent"));
 	RotatingMovement->RotationRate = FRotator(0.f, 180.f, 0.f);
 	RotatingMovement->SetAutoActivate(true);
+
+	Tags.Add(FName("Pickup"));
 }
 
 void APickup::BeginPlay()
@@ -54,16 +57,19 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 		Zack->OnPickedUp(PickupType,PickupAmount);
 		Zack->AddPickUpItem(this);
 	}
-	else
+	else if (OtherActor->ActorHasTag(FName("Node")))
 	{
+	//	BroadcastThrowableImpact(this);
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(),GetActorLocation(),1,this,0,"Distraction");
 		SetActorHiddenInGame(true);
-		//ItemMesh->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
-		//ItemMesh->SetPhysicsLinearVelocity(FVector(0.0f, 0.0f, 0.0f));
 		SetLifeSpan(0.5f);
 	}
-	
 }
 
+// void APickup::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
+// {
+// 	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
+// }
 // void APickup::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 // 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 // {
@@ -78,6 +84,11 @@ void APickup::Tick(float DeltaTime)
 void APickup::ActivateField(FVector Location)
 {
 	Field(Location);
+}
+
+void APickup::BroadcastThrowableImpact(AActor* HitActor)
+{
+	OnThrowableImpact.Broadcast(HitActor);
 }
 
 

@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "Blueprint/UserWidget.h"
 #include "Characters/Enemies/EnemyBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
@@ -14,16 +15,15 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Interfaces/InteractInterface.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Components/PawnNoiseEmitterComponent.h"
 #include "DataAssets/PickupVariantAsset.h"
 #include "GameFramework/RotatingMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Perception/AISense_Hearing.h"
 
 AZack::AZack()
 {
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	moveDistance = 500.0f;
-
-	PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawm Noise Emitter"));
 }
 
 
@@ -76,6 +76,37 @@ void AZack::Tick(float DeltaTime)
 void AZack::AddPickUpItem(APickup* Pickup)
 {
 	PickupActors.Add(Pickup);
+}
+
+void AZack::LoadGunAsync()
+{
+	USkeletalMeshComponent* SkeletalMeshComponent = GetMesh();
+	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+	Streamable.RequestAsyncLoad(
+		ShotGun.ToSoftObjectPath(),
+		FStreamableDelegate::CreateLambda([this,SkeletalMeshComponent]()
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			SpawnParams.Owner = this;
+			SpawnParams.Instigator = this;
+
+			FVector SpawnLocation = SkeletalMeshComponent->GetSocketLocation(FName("GunUnequipSocket")); 
+			FRotator SpawnRotation = SkeletalMeshComponent->GetSocketRotation(FName("GunUnequipSocket"));
+			UClass* ShotGunClass = ShotGun.Get();
+			
+			if (ShotGunClass)
+			{
+				AActor* Gun = GetWorld()->SpawnActor<AActor>(ShotGunClass,SpawnLocation,SpawnRotation,SpawnParams);
+
+				if (Gun)
+				{
+					Gun->AttachToComponent(SkeletalMeshComponent,FAttachmentTransformRules::SnapToTargetIncludingScale,FName("GunUnequipSocket"));
+					OnGunSpawned.Broadcast(Gun);
+				}
+			}
+		})
+	);
 }
 
 void AZack::OnInteract()
@@ -343,7 +374,7 @@ void AZack::ThrowEquippedItem(const FVector& Dest, AActor* HitActor,bool IgnoreD
 
 void AZack::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
 {
-	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
+	UAISense_Hearing::ReportNoiseEvent(GetWorld(),NoiseLocation,Loudness,NoiseMaker);
 }
 
 void AZack::HandleThrowMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
@@ -370,7 +401,8 @@ void AZack::OnThrowableLoaded()
 	EquippedItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
 	//EquippedItem->SetActorEnableCollision(true);
-	
+	EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
+
 	EquippedItem->ItemMesh->SetCollisionResponseToAllChannels(ECR_Block);
 	EquippedItem->ItemMesh->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
 	EquippedItem->ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -386,7 +418,6 @@ void AZack::OnThrowableLoaded()
 	EquippedItem->Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	EquippedItem = nullptr;
 	
-	//EquippedItem->OnThrowableImpact.AddDynamic(this,&AZack::HandleThrowableImpact);
 	
 	// Deduct ammo
 	UpdateInventoryAmmo(CurrentPickupType,-1);
@@ -403,7 +434,8 @@ void AZack::HandleThrowableImpact(AActor* HitActor)
 	GEngine->AddOnScreenDebugMessage(55, 10, FColor::Red, 
 		FString::Printf(TEXT("Throwable Impact on Actor: %s"), *HitActor->GetName()));
 	FVector Location = HitActor->GetActorLocation();
-	ReportNoise(HitActor, 1.0f, Location);
+	//ReportNoise(HitActor, 1.0f, Location);
+	//HitActor->MakeNoise(1.0f,nullptr,Location);
 }
 
 

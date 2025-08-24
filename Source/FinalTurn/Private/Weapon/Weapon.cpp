@@ -25,3 +25,9 @@ void AWeapon::Tick(float DeltaTime)
 
 }
 
+void AWeapon::ShootGun()
+{
+	Shoot();
+}
+
+

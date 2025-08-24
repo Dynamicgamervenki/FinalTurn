@@ -23,4 +23,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void Shoot();
+
+	UFUNCTION(BlueprintCallable)
+	void ShootGun();
+
 };

@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Pickups/PickupType.h"
+#include "Components/PawnNoiseEmitterComponent.h"
 #include "Pickup.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnThrowableImpact, AActor*, HitActor);
 
 class URotatingMovementComponent;
 class UFieldSystemComponent;
@@ -25,6 +28,9 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	// UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Components")
+	// UPawnNoiseEmitterComponent* PawnNoiseEmitter;
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
@@ -53,6 +59,9 @@ public:
 
 	UPROPERTY(EditInstanceOnly,BlueprintReadWrite)
 	int PickupAmount = 0;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnThrowableImpact OnThrowableImpact; 
 	
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<URadialFalloff> RadialFalloff;
@@ -67,4 +76,13 @@ public:
 	void ActivateField(FVector Location);
 	
 	FORCEINLINE URotatingMovementComponent* GetRotatingMovement() const { return RotatingMovement; }
+
+	UFUNCTION(BlueprintCallable)
+	void BroadcastThrowableImpact(AActor* HitActor);
+	
+	
+private:
+	//UFUNCTION()
+	//void ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation);
+
 };

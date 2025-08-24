@@ -16,8 +16,9 @@ class AThrowableItem;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPickupUpdated, EPickupType, PickupType, int32, NewAmount);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGunUnequip,EEquipState,EquipState,EPickupType,InPickupType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGunUnequip,EPickupType,InPickupType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGunSpawnedDelegate, AActor*, SpawnedGunActor);
+
 
 UCLASS()
 class FINALTURN_API AZack : public ACharacter, public IPickupInterface
@@ -31,14 +32,12 @@ public:
     FOnPickupUpdated OnPickupUpdated;
     UPROPERTY(BlueprintAssignable)
     FOnGunUnequip OnGunUnequip;
+
     // --- Unreal Overrides ---
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
     
-    UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Components")
-    UPawnNoiseEmitterComponent* PawnNoiseEmitter;
-
     // --- Pickup Interface ---
     virtual void OnPickedUp(EPickupType PickupType, int32 Amount) override;
     virtual void SetDetectedByEnemy_Implementation(bool bDetected) override;
@@ -97,6 +96,7 @@ public:
 
     UPROPERTY(VisibleInstanceOnly,BlueprintReadWrite,Category = Default)
     TArray<APickup*> PickupActors;
+
     
     UFUNCTION(BlueprintCallable)
     void AddPickUpItem(APickup* Pickup);
@@ -106,6 +106,15 @@ public:
     
     UFUNCTION(BlueprintCallable)
     int32 GetAmmoOfState(EPickupType PickupType);
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void ShowGameCompletedWidget();
+    
+    UFUNCTION(BlueprintCallable)
+    void LoadGunAsync();
+
+    UPROPERTY(BlueprintAssignable)
+    FGunSpawnedDelegate OnGunSpawned;
     
 protected:
     // --- Input Handling ---
@@ -180,6 +189,16 @@ protected:
     void UpdateInventoryAmmo(EPickupType PickupType, int32 Amount);
     UFUNCTION(BlueprintCallable)
     void BroadCastGunUnequip(EPickupType InPickUpType);
+    
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UUserWidget> GameCompletedWidget;
+
+    UPROPERTY(BlueprintReadOnly)
+    TSoftClassPtr<AActor> ShotGun;
+    
+    UPROPERTY(BlueprintReadWrite)
+    AActor* SpawnedShotGun;
+
 private:
     UFUNCTION()
     void PlayAnimMontages(UAnimMontage* MontageToPlay);

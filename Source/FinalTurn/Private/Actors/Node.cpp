@@ -25,6 +25,8 @@ ANode::ANode()
 	SM_Ring->SetHiddenInGame(false);
 	SM_Ring->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SM_Ring->SetupAttachment(GetRootComponent());
+
+	Tags.Add(FName("Node"));
 }
 
 
@@ -95,6 +97,7 @@ TArray<AActor*> ANode::GetOverlappingActorsOnNode_Implementation()
 	TArray<AActor*> OverlappingActors;
 	Box->GetOverlappingActors(OverlappingActors);
 	OverlappingActors.Remove(this);
+	OverlappingActors.Remove(UGameplayStatics::GetPlayerCharacter(GetWorld(),0));
 	return OverlappingActors;
 }
 
@@ -171,7 +174,8 @@ void ANode::HandleFinalNodeTransition(AZack* Zack)
 	DelayTimerHandle,
 	FTimerDelegate::CreateLambda([this,Zack]()
 	{
-		UGameplayStatics::OpenLevel(this,LevelName);
+		//UGameplayStatics::OpenLevel(this,LevelName);
+		Zack->ShowGameCompletedWidget();
 		Zack->CanClickNode = true;
 		Zack->bOnFinalNode = false;
 	}),

@@ -63,17 +63,23 @@ public :
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool HiddenNode = false;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="HiddenNode"))
+	AActor* HidingLocationActor;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	FLinearColor Color = FLinearColor::White;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool isGasNode = false;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,meta=(EditCondition="isGasNode"))
 	bool isGasNodeActivated = false;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
+	bool isTempNode = false;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,meta=(EditCondition="isTempNode"))
+	bool isTempNodeActivated = false;
 	
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Default,meta=(EditCondition="HiddenNode"))
-	AActor* HidingLocationActor;
+	
 
 private:
 	UFUNCTION()
