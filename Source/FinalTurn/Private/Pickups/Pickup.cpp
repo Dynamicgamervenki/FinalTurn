@@ -33,7 +33,7 @@ APickup::APickup()
 	RotatingMovement->RotationRate = FRotator(0.f, 180.f, 0.f);
 	RotatingMovement->SetAutoActivate(true);
 
-	//PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawm Noise Emitter"));
+	Tags.Add(FName("Pickup"));
 }
 
 void APickup::BeginPlay()
