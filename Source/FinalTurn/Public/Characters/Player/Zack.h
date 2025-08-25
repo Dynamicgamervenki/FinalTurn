@@ -21,13 +21,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGunSpawnedDelegate, AActor*, Spawne
 
 
 UCLASS()
-class FINALTURN_API AZack : public ACharacter, public IPickupInterface
+class FINALTURN_API AZack : public ACharacter, public IPickupInterface 
 {
     GENERATED_BODY()
 
 public:
     AZack();
-
+    
     UPROPERTY(BlueprintAssignable)
     FOnPickupUpdated OnPickupUpdated;
     UPROPERTY(BlueprintAssignable)
@@ -115,6 +115,10 @@ public:
 
     UPROPERTY(BlueprintAssignable)
     FGunSpawnedDelegate OnGunSpawned;
+
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= "AI")
+    int32 ID = 0;
+
     
 protected:
     // --- Input Handling ---

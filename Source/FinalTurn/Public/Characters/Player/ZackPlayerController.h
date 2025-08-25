@@ -4,24 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GenericTeamAgentInterface.h"
 #include "ZackPlayerController.generated.h"
 
-struct FInputActionValue;
-class UInputMappingContext;
-class UInputAction;
-/**
- * 
- */
 UCLASS()
-class FINALTURN_API AZackPlayerController : public APlayerController
+class FINALTURN_API AZackPlayerController : public APlayerController , public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
 public:
 	AZackPlayerController();
 
-protected:
-	virtual void BeginPlay() override;
-private:
+	virtual FGenericTeamId GetGenericTeamId() const;
 
+private:
+	FGenericTeamId ZackTeamID;
 };
