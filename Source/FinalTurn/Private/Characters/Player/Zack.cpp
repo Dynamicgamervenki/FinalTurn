@@ -495,6 +495,12 @@ void AZack::SetCanClickOnNode_Implementation(bool click)
 	CanClickNode = click;
 }
 
+void AZack::HandleDeathAnimation_Implementation(AActor* Enemy)
+{
+	
+}
+
+
 void AZack::PrintOutData()
 {
 	if (GEngine)

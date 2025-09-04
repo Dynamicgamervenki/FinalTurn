@@ -55,6 +55,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
     bool CanClickNode = true;
     virtual void SetCanClickOnNode_Implementation(bool click) override;
+
+   virtual void HandleDeathAnimation_Implementation(AActor* Enemy) override;
     
     /** Detected By Enemy? */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Life")
@@ -202,6 +204,7 @@ protected:
     
     UPROPERTY(BlueprintReadWrite)
     AActor* SpawnedShotGun;
+
 
 private:
     UFUNCTION()
