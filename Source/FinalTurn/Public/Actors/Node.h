@@ -88,6 +88,6 @@ private:
 	void HandleTeleportNode(AZack* Zack);
 	UFUNCTION()
 	void HandleFinalNodeTransition(AZack* Zack);
-	
+
 };
   
