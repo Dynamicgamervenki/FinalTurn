@@ -56,6 +56,9 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Zack->OnPickedUp(PickupType,PickupAmount);
 		Zack->AddPickUpItem(this);
+		int32 RandomValue = FMath::RandRange(1, 10); 
+		FString NewLabel = FString::Printf(TEXT("Inventory_Pickup_%d"), RandomValue);
+		SetActorLabel(*NewLabel);
 	}
 	else if (OtherActor->ActorHasTag(FName("Node")))
 	{

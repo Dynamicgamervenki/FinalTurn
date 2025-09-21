@@ -25,9 +25,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TObjectPtr<USphereComponent> SphereCollision;
-
+	
 	UPROPERTY()
 	FOnBreakableDestroyed OnBreakableDestroyed;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -48,7 +49,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category=Breakable)
 	bool bPlaceHeavyDynamiteOnClick;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bPlaceHeavyDynamiteOnClick"))
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable)
 	AActor* HeavydynamitePlacingPositionActor;
 
 	UFUNCTION()
@@ -56,7 +57,8 @@ protected:
 
 	UPROPERTY(EditAnywhere,Category=Breakable)
 	ANode* NodeToMoveAfterDestroyingBreakable;
-	
+
+		
 private:
 	UPROPERTY(VisibleAnywhere)
 	UGeometryCollectionComponent* GeometryCollection;
@@ -78,4 +80,6 @@ public:
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bStopBeforeUnits"))
 	float UnitsBeforeStop = 100.0f;
+	UFUNCTION(BlueprintCallable)
+	FVector GetPickupAttachLocation();
 };

@@ -24,7 +24,7 @@ ABreakableActor::ABreakableActor()
 	SphereCollision->OnComponentBeginOverlap.AddDynamic(this,&ABreakableActor::OnBoxOverlap);
 	SphereCollision->ShapeColor = FColor(0, 197, 255, 255);
 	SphereCollision->SetSphereRadius(100.0f);
-
+	
 } 
 
 void ABreakableActor::BeginPlay()
@@ -120,6 +120,11 @@ void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
 void ABreakableActor::DestroyBreakable()
 {
 	
+}
+
+FVector ABreakableActor::GetPickupAttachLocation()
+{
+		return HeavydynamitePlacingPositionActor->GetActorLocation();
 }
 
 void ABreakableActor::Glow_Implementation()

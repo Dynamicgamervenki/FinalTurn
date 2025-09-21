@@ -261,6 +261,7 @@ void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState I
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
 		Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
 		CurrentEquipState = InEquipState;
+		AttachPickUpIfNearBreakable();
 	}
 }
 

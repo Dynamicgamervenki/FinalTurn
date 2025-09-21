@@ -205,6 +205,8 @@ protected:
     UPROPERTY(BlueprintReadWrite)
     AActor* SpawnedShotGun;
 
+    UFUNCTION(BlueprintImplementableEvent)
+    void AttachPickUpIfNearBreakable();
 
 private:
     UFUNCTION()
