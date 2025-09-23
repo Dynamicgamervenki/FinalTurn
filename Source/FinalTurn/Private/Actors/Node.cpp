@@ -6,6 +6,8 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Perception/AISense_Hearing.h"
+#include "Pickups/Pickup.h"
 
 ANode::ANode()
 {
@@ -54,9 +56,6 @@ void ANode::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Other
 		{
 			HandleTeleportNode(Zack);
 		}
-		// GEngine->AddOnScreenDebugMessage(-12, 2.f, FColor::Red, TEXT("Reached Node , CanClickOnNode : True"));
-		// Zack->IsMoving = false;
-		// Zack->CanClickNode = true;
 	}
 }
 
@@ -174,7 +173,6 @@ void ANode::HandleFinalNodeTransition(AZack* Zack)
 	DelayTimerHandle,
 	FTimerDelegate::CreateLambda([this,Zack]()
 	{
-		//UGameplayStatics::OpenLevel(this,LevelName);
 		Zack->ShowGameCompletedWidget();
 		Zack->CanClickNode = true;
 		Zack->bOnFinalNode = false;

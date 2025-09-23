@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interfaces/InteractInterface.h"
+#include "Particles/Emitter.h"
 #include "Node.generated.h"
 
 class AZack;
@@ -73,12 +74,14 @@ public :
 	bool isGasNode = false;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,meta=(EditCondition="isGasNode"))
 	bool isGasNodeActivated = false;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,meta=(EditCondition="isGasNode"))
+	AEmitter* GasVfx;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= Default)
 	bool isTempNode = false;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,meta=(EditCondition="isTempNode"))
 	bool isTempNodeActivated = false;
-	
+
 	
 
 private:

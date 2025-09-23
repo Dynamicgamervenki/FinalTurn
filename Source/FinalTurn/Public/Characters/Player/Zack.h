@@ -207,6 +207,9 @@ protected:
 
     UFUNCTION(BlueprintImplementableEvent)
     void AttachPickUpIfNearBreakable();
+    
+    UPROPERTY(EditDefaultsOnly)
+    TSoftClassPtr<APickup> CrystalPickup;
 
 private:
     UFUNCTION()

@@ -15,7 +15,6 @@ class UFieldSystemComponent;
 class URadialVector;
 class UFieldSystemMetaData;
 class URadialFalloff;
-class URadialVector;
 class USphereComponent;
 
 UCLASS()
@@ -29,13 +28,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	// UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Components")
-	// UPawnNoiseEmitterComponent* PawnNoiseEmitter;
-
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-	//UFUNCTION()
-	//virtual  void OnSphereEndOverlap( UPrimitiveComponent* OverlappedComponent ,AActor* OtherActor ,UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite)
 	URotatingMovementComponent* RotatingMovement;
 	
@@ -80,9 +75,5 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BroadcastThrowableImpact(AActor* HitActor);
 	
-	
-private:
-	//UFUNCTION()
-	//void ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation);
 
 };
