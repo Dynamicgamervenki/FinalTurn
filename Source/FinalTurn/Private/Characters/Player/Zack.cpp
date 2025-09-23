@@ -415,15 +415,9 @@ void AZack::OnThrowableLoaded()
 	EquippedItem->ItemMesh->SetMassOverrideInKg(NAME_None, 1.0f, true);
 	EquippedItem->ItemMesh->AddImpulse(FinalImpulse);
 	
-	if (EquippedItem->PickupType == EPickupType::LavaCrystal)
-	{
-		PickupAsyncLoad(CrystalPickup);
-		UpdateInventoryAmmo(EPickupType::LavaCrystal,+1);
-	}
 	PickupActors.Remove(EquippedItem);
 	EquippedItem->Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	EquippedItem = nullptr;
-
 	
 	// Deduct ammo
 	UpdateInventoryAmmo(CurrentPickupType,-1);
