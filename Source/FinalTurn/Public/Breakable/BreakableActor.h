@@ -61,7 +61,7 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void UpdateBreakableWidget();
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	float Hit = 0;
 		
 private:
@@ -86,4 +86,7 @@ public:
 	float UnitsBeforeStop = 100.0f;
 	UFUNCTION(BlueprintCallable)
 	FVector GetPickupAttachLocation();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateUi();
 };

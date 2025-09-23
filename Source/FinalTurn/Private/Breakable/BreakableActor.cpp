@@ -128,6 +128,11 @@ FVector ABreakableActor::GetPickupAttachLocation()
 		return HeavydynamitePlacingPositionActor->GetActorLocation();
 }
 
+void ABreakableActor::UpdateUi()
+{
+	UpdateBreakableWidget();
+}
+
 void ABreakableActor::Glow_Implementation()
 {
 	GeometryCollection->SetRenderCustomDepth(true);
