@@ -43,7 +43,7 @@ protected:
 	virtual void ResetGlow_Implementation() override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Breakable")
-	int AmountToGetDestoryed = 1;
+	float AmountToGetDestoryed = 1;
 	UPROPERTY(BlueprintReadWrite, Category="Breakable")
 	int ThrownCount;
 
@@ -58,11 +58,15 @@ protected:
 	UPROPERTY(EditAnywhere,Category=Breakable)
 	ANode* NodeToMoveAfterDestroyingBreakable;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateBreakableWidget();
+
+	UPROPERTY(BlueprintReadOnly)
+	float Hit = 0;
 		
 private:
 	UPROPERTY(VisibleAnywhere)
 	UGeometryCollectionComponent* GeometryCollection;
-	int Hit = 0;
 
 	UFUNCTION()
 	void HandleZackOverlap(AZack* Zack);

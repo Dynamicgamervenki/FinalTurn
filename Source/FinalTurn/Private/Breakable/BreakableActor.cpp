@@ -98,6 +98,7 @@ void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
 		return;
 	}
 	Hit++;
+	UpdateBreakableWidget();
 	Pickup->SetActorHiddenInGame(true);
 	if (Hit == AmountToGetDestoryed)
 	{
