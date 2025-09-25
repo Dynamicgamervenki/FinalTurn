@@ -28,4 +28,6 @@ public:
 	void SetIsHiding(bool isHiding);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	bool GetIsHiding();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void HandleDeathAnimation(AActor* Enemy);
 };

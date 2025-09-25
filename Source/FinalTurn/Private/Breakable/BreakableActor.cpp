@@ -24,7 +24,7 @@ ABreakableActor::ABreakableActor()
 	SphereCollision->OnComponentBeginOverlap.AddDynamic(this,&ABreakableActor::OnBoxOverlap);
 	SphereCollision->ShapeColor = FColor(0, 197, 255, 255);
 	SphereCollision->SetSphereRadius(100.0f);
-
+	
 } 
 
 void ABreakableActor::BeginPlay()
@@ -78,6 +78,17 @@ void ABreakableActor::HandleZackOverlap(AZack* Zack)
 		Zack->BreakableActor = this;
 		Zack->HeavyDynamiteSpawnLocation = HeavydynamitePlacingPositionActor->GetActorLocation();
 		Zack->PlayPlacignHeavyDynamiteMontage();
+		FTimerHandle DelayHandle;
+		GetWorldTimerManager().SetTimer(
+			DelayHandle,
+			[this]()
+			{
+				Hit++;
+				UpdateUi();
+			},
+			2.0f,
+			false
+			);
 	}
 }
 
@@ -98,11 +109,14 @@ void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
 		return;
 	}
 	Hit++;
+	Pickup->PlayPickupImpactSound(Pickup->ItemMesh->GetComponentLocation());
+	UpdateBreakableWidget();
 	Pickup->SetActorHiddenInGame(true);
 	if (Hit == AmountToGetDestoryed)
 	{
 		Pickup->Field(GetActorLocation());
 		Pickup->Destroy();
+		PlayExplosionSound();
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(),GetActorLocation(),1,this,0,"Explosion");
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(
@@ -120,6 +134,16 @@ void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
 void ABreakableActor::DestroyBreakable()
 {
 	
+}
+
+FVector ABreakableActor::GetPickupAttachLocation()
+{
+		return HeavydynamitePlacingPositionActor->GetActorLocation();
+}
+
+void ABreakableActor::UpdateUi()
+{
+	UpdateBreakableWidget();
 }
 
 void ABreakableActor::Glow_Implementation()

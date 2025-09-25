@@ -261,6 +261,7 @@ void AZack::HandlePickupEquipped(APickup* Pickup,FName SocketName, EEquipState I
 		FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true);
 		Pickup->AttachToComponent(GetMesh(), TransformRules, SocketName);
 		CurrentEquipState = InEquipState;
+		AttachPickUpIfNearBreakable();
 	}
 }
 
@@ -418,7 +419,6 @@ void AZack::OnThrowableLoaded()
 	EquippedItem->Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	EquippedItem = nullptr;
 	
-	
 	// Deduct ammo
 	UpdateInventoryAmmo(CurrentPickupType,-1);
 	CanClickNode = true;
@@ -494,6 +494,12 @@ void AZack::SetCanClickOnNode_Implementation(bool click)
 {
 	CanClickNode = click;
 }
+
+void AZack::HandleDeathAnimation_Implementation(AActor* Enemy)
+{
+	
+}
+
 
 void AZack::PrintOutData()
 {

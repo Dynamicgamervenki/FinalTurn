@@ -21,13 +21,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGunSpawnedDelegate, AActor*, Spawne
 
 
 UCLASS()
-class FINALTURN_API AZack : public ACharacter, public IPickupInterface
+class FINALTURN_API AZack : public ACharacter, public IPickupInterface 
 {
     GENERATED_BODY()
 
 public:
     AZack();
-
+    
     UPROPERTY(BlueprintAssignable)
     FOnPickupUpdated OnPickupUpdated;
     UPROPERTY(BlueprintAssignable)
@@ -55,6 +55,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
     bool CanClickNode = true;
     virtual void SetCanClickOnNode_Implementation(bool click) override;
+
+   virtual void HandleDeathAnimation_Implementation(AActor* Enemy) override;
     
     /** Detected By Enemy? */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Life")
@@ -115,6 +117,10 @@ public:
 
     UPROPERTY(BlueprintAssignable)
     FGunSpawnedDelegate OnGunSpawned;
+
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category= "AI")
+    int32 ID = 0;
+
     
 protected:
     // --- Input Handling ---
@@ -198,6 +204,12 @@ protected:
     
     UPROPERTY(BlueprintReadWrite)
     AActor* SpawnedShotGun;
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void AttachPickUpIfNearBreakable();
+    
+    UPROPERTY(EditDefaultsOnly)
+    TSoftClassPtr<APickup> CrystalPickup;
 
 private:
     UFUNCTION()

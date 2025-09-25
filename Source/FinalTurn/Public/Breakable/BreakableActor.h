@@ -25,9 +25,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TObjectPtr<USphereComponent> SphereCollision;
-
+	
 	UPROPERTY()
 	FOnBreakableDestroyed OnBreakableDestroyed;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -42,13 +43,13 @@ protected:
 	virtual void ResetGlow_Implementation() override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Breakable")
-	int AmountToGetDestoryed = 1;
+	float AmountToGetDestoryed = 1;
 	UPROPERTY(BlueprintReadWrite, Category="Breakable")
 	int ThrownCount;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category=Breakable)
 	bool bPlaceHeavyDynamiteOnClick;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bPlaceHeavyDynamiteOnClick"))
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable)
 	AActor* HeavydynamitePlacingPositionActor;
 
 	UFUNCTION()
@@ -56,11 +57,16 @@ protected:
 
 	UPROPERTY(EditAnywhere,Category=Breakable)
 	ANode* NodeToMoveAfterDestroyingBreakable;
-	
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void UpdateBreakableWidget();
+
+	UPROPERTY(BlueprintReadWrite)
+	float Hit = 0;
+		
 private:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category= Breakable,meta=(AllowPrivateAccess="true"))
 	UGeometryCollectionComponent* GeometryCollection;
-	int Hit = 0;
 
 	UFUNCTION()
 	void HandleZackOverlap(AZack* Zack);
@@ -78,4 +84,13 @@ public:
 	bool bStopBeforeUnits;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Breakable,meta=(EditCondition="bStopBeforeUnits"))
 	float UnitsBeforeStop = 100.0f;
+	UFUNCTION(BlueprintCallable)
+	FVector GetPickupAttachLocation();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateUi();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayExplosionSound();
+	
 };

@@ -2,6 +2,8 @@
 
 
 #include "Pickups/Pickup.h"
+
+#include "Actors/Node.h"
 #include "Components/SphereComponent.h"
 #include "Characters/Player/Zack.h"
 #include "Field/FieldSystemObjects.h"
@@ -51,30 +53,32 @@ void APickup::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 	{
 		PulseEffect->SetVisibility(false);
 		RotatingMovement->DestroyComponent();
-		PlayPickUpSound(GetActorLocation());
+		PlayPickUpSound(ItemMesh->GetComponentLocation());
 		this->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 		Sphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		Zack->OnPickedUp(PickupType,PickupAmount);
 		Zack->AddPickUpItem(this);
+#if WITH_EDITOR
+		int32 RandomValue = FMath::RandRange(1, 10); 
+		FString NewLabel = FString::Printf(TEXT("Inventory_Pickup_%d"), RandomValue);
+		this->SetActorLabel(*NewLabel);
+#endif
 	}
-	else if (OtherActor->ActorHasTag(FName("Node")))
+	else if (ANode* Node = Cast<ANode>(OtherActor))
 	{
-	//	BroadcastThrowableImpact(this);
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(),GetActorLocation(),1,this,0,"Distraction");
 		SetActorHiddenInGame(true);
+		PlayPickupImpactSound(SweepResult.ImpactPoint);
+		Sphere->SetCollisionResponseToChannel(ECC_Pawn,ECR_Ignore);
+		if (PickupType == EPickupType::LavaCrystal && Node->isGasNode && Node->isGasNode && Node->GasVfx)
+		{
+			Node->SM_Node->SetVisibility(false);
+			Node->GasVfx->SetActorHiddenInGame(true);
+		}
+		
 		SetLifeSpan(0.5f);
 	}
 }
-
-// void APickup::ReportNoise(AActor* NoiseMaker, float Loudness, const FVector& NoiseLocation)
-// {
-// 	PawnNoiseEmitter->MakeNoise(NoiseMaker,Loudness,NoiseLocation);
-// }
-// void APickup::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-// 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-// {
-// 	
-// }
 
 void APickup::Tick(float DeltaTime)
 {

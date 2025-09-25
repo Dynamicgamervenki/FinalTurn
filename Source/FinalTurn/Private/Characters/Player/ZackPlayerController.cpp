@@ -5,11 +5,10 @@
 
 AZackPlayerController::AZackPlayerController()
 {
-	
+	ZackTeamID = FGenericTeamId(0);
 }
 
-void AZackPlayerController::BeginPlay()
+FGenericTeamId AZackPlayerController::GetGenericTeamId() const
 {
-	Super::BeginPlay();
-
+	return ZackTeamID;
 }
