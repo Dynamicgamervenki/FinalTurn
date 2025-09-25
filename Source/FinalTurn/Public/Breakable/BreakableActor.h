@@ -65,7 +65,7 @@ protected:
 	float Hit = 0;
 		
 private:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category= Breakable,meta=(AllowPrivateAccess="true"))
 	UGeometryCollectionComponent* GeometryCollection;
 
 	UFUNCTION()
@@ -89,4 +89,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateUi();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayExplosionSound();
+	
 };

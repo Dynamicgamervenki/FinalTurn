@@ -78,6 +78,17 @@ void ABreakableActor::HandleZackOverlap(AZack* Zack)
 		Zack->BreakableActor = this;
 		Zack->HeavyDynamiteSpawnLocation = HeavydynamitePlacingPositionActor->GetActorLocation();
 		Zack->PlayPlacignHeavyDynamiteMontage();
+		FTimerHandle DelayHandle;
+		GetWorldTimerManager().SetTimer(
+			DelayHandle,
+			[this]()
+			{
+				Hit++;
+				UpdateUi();
+			},
+			2.0f,
+			false
+			);
 	}
 }
 
@@ -98,12 +109,14 @@ void ABreakableActor::HandlePickupOverlap(APickup* Pickup)
 		return;
 	}
 	Hit++;
+	Pickup->PlayPickupImpactSound(Pickup->ItemMesh->GetComponentLocation());
 	UpdateBreakableWidget();
 	Pickup->SetActorHiddenInGame(true);
 	if (Hit == AmountToGetDestoryed)
 	{
 		Pickup->Field(GetActorLocation());
 		Pickup->Destroy();
+		PlayExplosionSound();
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(),GetActorLocation(),1,this,0,"Explosion");
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(

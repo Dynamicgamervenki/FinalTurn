@@ -74,6 +74,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void BroadcastThrowableImpact(AActor* HitActor);
-	
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayPickupImpactSound(FVector Location);
 };
